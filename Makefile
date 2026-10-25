@@ -1,11 +1,15 @@
 PHP = docker compose exec php
+PHP_RUN = docker compose run --rm php
 
-.PHONY: up down sh test-db test
+.PHONY: build up down sh test-db test
+
+build:
+	docker compose build
+	$(PHP_RUN) composer install
+	$(PHP_RUN) bin/console doctrine:migrations:migrate -n --allow-no-migration
 
 up:
-	docker compose up -d --build
-	$(PHP) composer install
-	$(PHP) bin/console doctrine:migrations:migrate -n --allow-no-migration
+	docker compose up -d
 
 down:
 	docker compose down
