@@ -1,0 +1,34 @@
+deptrac:
+  paths: [./src]
+
+  layers:
+    # --- наши слои ---
+    - name: Domain
+      collectors: [{ type: directory, value: src/Domain/.* }]
+    - name: Application
+      collectors: [{ type: directory, value: src/Application/.* }]
+    - name: Infrastructure
+      collectors: [{ type: directory, value: src/Infrastructure/.* }]
+    - name: UI
+      collectors: [{ type: directory, value: src/UI/.* }]
+
+    # --- внешние библиотеки ---
+    - name: BrickMath
+      collectors: [{ type: classLike, value: '^Brick\\Math\\' }]
+    - name: SymfonyUid
+      collectors: [{ type: classLike, value: '^Symfony\\Component\\Uid\\' }]
+    - name: Symfony                      # весь Symfony, кроме Uid
+      collectors:
+        - type: bool
+          must:     [{ type: classLike, value: '^Symfony\\' }]
+          must_not: [{ type: classLike, value: '^Symfony\\Component\\Uid\\' }]
+    - name: Doctrine
+      collectors: [{ type: classLike, value: '^Doctrine\\' }]
+    - name: PsrClock
+      collectors: [{ type: classLike, value: '^Psr\\Clock\\' }]
+
+  ruleset:
+    Domain:         [BrickMath, SymfonyUid]
+    Application:    [Domain, BrickMath, SymfonyUid, PsrClock]
+    Infrastructure: [Domain, Application, BrickMath, SymfonyUid, PsrClock, Doctrine, Symfony]
+    UI:             [Application, Domain, BrickMath, SymfonyUid, PsrClock, Symfony]
