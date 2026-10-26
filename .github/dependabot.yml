@@ -4,6 +4,12 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "symfony/*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      symfony:
+        patterns: ["symfony/*"]
 
   - package-ecosystem: github-actions
     directory: /
