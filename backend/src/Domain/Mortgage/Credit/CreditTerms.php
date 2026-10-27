@@ -21,6 +21,9 @@ final readonly class CreditTerms
     public const int MIN_TERM_MONTHS = 1;
     public const int MAX_TERM_MONTHS = 360;
 
+    /**
+     * @param int<self::MIN_TERM_MONTHS, self::MAX_TERM_MONTHS> $termMonths
+     */
     private function __construct(
         private Money $propertyPrice,
         private Money $downPayment,
@@ -87,8 +90,10 @@ final readonly class CreditTerms
             $violations['termMonths'] = 'Срок должен быть от 1 до 360 месяцев';
         }
 
-        // Проверяем все три null: PHPStan не знает, что при пустом списке нарушений все VO созданы.
-        if ([] !== $violations || null === $price || null === $payment || null === $rate) {
+        // Повторяем проверки null и срока: PHPStan не знает, что при пустом списке нарушений все VO созданы
+        // и срок в диапазоне. После этого if он сужает тип срока до int<1, 360> — его видят калькуляторы.
+        if ([] !== $violations || null === $price || null === $payment || null === $rate
+            || $termMonths < self::MIN_TERM_MONTHS || $termMonths > self::MAX_TERM_MONTHS) {
             throw new InvalidCreditTermsException($violations);
         }
 
@@ -110,6 +115,9 @@ final readonly class CreditTerms
         return $this->annualRate;
     }
 
+    /**
+     * @return int<self::MIN_TERM_MONTHS, self::MAX_TERM_MONTHS>
+     */
     public function getTermMonths(): int
     {
         return $this->termMonths;

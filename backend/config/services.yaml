@@ -23,5 +23,16 @@ services:
             - '../src/Domain/Mortgage/Money.php'
             - '../src/Domain/Mortgage/Calculation/Calculation.php'
 
+    # Стратегии расчёта графика (дизайн 3.2): каждый класс с этим интерфейсом получает тег,
+    # MortgageCalculator собирает все помеченные сервисы. Здесь, а не атрибутами
+    # (#[AutoconfigureTag], #[AutowireIterator]): это классы Symfony, Domain от них не зависит (Deptrac).
+    _instanceof:
+        App\Domain\Mortgage\Calculator\PaymentScheduleCalculator:
+            tags: ['mortgage.payment_schedule_calculator']
+
+    App\Domain\Mortgage\Calculator\MortgageCalculator:
+        arguments:
+            $calculators: !tagged_iterator mortgage.payment_schedule_calculator
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
