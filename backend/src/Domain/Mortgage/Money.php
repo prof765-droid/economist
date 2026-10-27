@@ -28,7 +28,7 @@ final readonly class Money
     // Конструктор приватный: создать Money можно только через of()/zero(),
     // поэтому объект с 3 знаками или отрицательной суммой просто не может существовать.
     private function __construct(
-        private BigDecimal $amount,
+        private BigDecimal $value,
     ) {
     }
 
@@ -64,13 +64,13 @@ final readonly class Money
     // Сумма двух неотрицательных чисел с 2 знаками — снова такое же число, проверять нечего.
     public function plus(self $other): self
     {
-        return new self($this->amount->plus($other->amount));
+        return new self($this->value->plus($other->value));
     }
 
     // Через of(): если вычли больше, чем было, получим исключение — в графике это баг (остаток ушёл в минус).
     public function minus(self $other): self
     {
-        return self::of($this->amount->minus($other->amount));
+        return self::of($this->value->minus($other->value));
     }
 
     /**
@@ -80,29 +80,29 @@ final readonly class Money
      */
     public function multipliedBy(BigDecimal $factor): self
     {
-        return self::of($this->amount->multipliedBy($factor));
+        return self::of($this->value->multipliedBy($factor));
     }
 
     // brick/math требует явно указать точность и правило округления при делении:
     // 1000.00 / 3 = 333.333… — без них она бы бросила исключение, а не потеряла копейки молча.
     public function dividedBy(int $divisor): self
     {
-        return self::of($this->amount->dividedBy($divisor, self::SCALE, RoundingMode::HalfUp));
+        return self::of($this->value->dividedBy($divisor, self::SCALE, RoundingMode::HalfUp));
     }
 
     public function isZero(): bool
     {
-        return $this->amount->isZero();
+        return $this->value->isZero();
     }
 
     public function isGreaterThan(self $other): bool
     {
-        return $this->amount->isGreaterThan($other->amount);
+        return $this->value->isGreaterThan($other->value);
     }
 
     public function isGreaterThanOrEqualTo(self $other): bool
     {
-        return $this->amount->isGreaterThanOrEqualTo($other->amount);
+        return $this->value->isGreaterThanOrEqualTo($other->value);
     }
 
     // Меньшая из двух сумм. Нужна правилу графика «основной долг = min(плановый, остаток)»:
@@ -115,18 +115,19 @@ final readonly class Money
     // Сравнение по значению, а не по ссылке: два разных объекта Money('10.00') равны.
     public function equals(self $other): bool
     {
-        return $this->amount->isEqualTo($other->amount);
+        return $this->value->isEqualTo($other->value);
     }
 
     // Доступ к числу для математики, которой нет в Money (например, формула аннуитета).
     // Отдавать BigDecimal безопасно: он тоже неизменяемый.
-    public function getAmount(): BigDecimal
+    // getValue, а не getAmount: getAmount() у Payment уже значит «сумма платежа» (Money).
+    public function getValue(): BigDecimal
     {
-        return $this->amount;
+        return $this->value;
     }
 
     public function toString(): string
     {
-        return (string) $this->amount;
+        return (string) $this->value;
     }
 }

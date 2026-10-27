@@ -129,12 +129,12 @@ final class MoneyTest extends TestCase
         self::assertSame($small, $big->min($small));
     }
 
-    public function testGetAmountReturnsBigDecimalWithScale2(): void
+    public function testGetValueReturnsBigDecimalWithScale2(): void
     {
-        $amount = Money::of('42')->getAmount();
+        $value = Money::of('42')->getValue();
 
-        self::assertSame(2, $amount->getScale());
-        self::assertSame('42.00', (string) $amount);
+        self::assertSame(2, $value->getScale());
+        self::assertSame('42.00', (string) $value);
     }
 
     public function testOperationsDoNotChangeOriginal(): void

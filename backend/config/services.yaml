@@ -19,7 +19,7 @@ services:
     App\:
         resource: '../src/'
         exclude:
-            - '../src/Domain/Mortgage/{Loan,Schedule}/'
+            - '../src/Domain/Mortgage/{Credit,Schedule}/'
             - '../src/Domain/Mortgage/Money.php'
             - '../src/Domain/Mortgage/Calculation/Calculation.php'
 

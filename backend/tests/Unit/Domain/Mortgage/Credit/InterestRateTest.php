@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Domain\Mortgage\Loan;
+namespace App\Tests\Unit\Domain\Mortgage\Credit;
 
-use App\Domain\Mortgage\Loan\InterestRate;
+use App\Domain\Mortgage\Credit\InterestRate;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Domain\Mortgage\Loan;
+namespace App\Tests\Unit\Domain\Mortgage\Credit;
 
-use App\Domain\Mortgage\Loan\InvalidLoanTermsException;
-use App\Domain\Mortgage\Loan\LoanTerms;
-use App\Domain\Mortgage\Loan\PaymentType;
+use App\Domain\Mortgage\Credit\CreditTerms;
+use App\Domain\Mortgage\Credit\InvalidCreditTermsException;
+use App\Domain\Mortgage\Credit\PaymentType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
-final class LoanTermsTest extends TestCase
+final class CreditTermsTest extends TestCase
 {
     public function testCreatesValidTerms(): void
     {
@@ -22,7 +22,7 @@ final class LoanTermsTest extends TestCase
         self::assertSame(240, $terms->getTermMonths());
         self::assertSame(PaymentType::ANNUITY, $terms->getPaymentType());
         self::assertSame('2026-10-23', $terms->getStartDate()->format('Y-m-d'));
-        self::assertSame('4000000.00', $terms->getLoanAmount()->toString());
+        self::assertSame('4000000.00', $terms->getCreditAmount()->toString());
     }
 
     public function testRoundsPropertyPrice(): void
@@ -78,7 +78,7 @@ final class LoanTermsTest extends TestCase
         self::assertSame([$field], array_keys(self::violationsOf($price, $downPayment, $rate, $term)));
     }
 
-    public function testLoanAmountViolationMessage(): void
+    public function testCreditAmountViolationMessage(): void
     {
         self::assertSame(
             ['downPayment' => 'Сумма кредита должна быть не меньше 500 000 ₽'],
@@ -116,9 +116,9 @@ final class LoanTermsTest extends TestCase
         string $annualRate = '18.5',
         int $termMonths = 240,
         string $startDate = '2026-10-23',
-    ): LoanTerms {
+    ): CreditTerms {
         // Строка без времени — конструктор даёт полночь; в отличие от createFromFormat, false не вернёт.
-        return LoanTerms::create(
+        return CreditTerms::create(
             $propertyPrice,
             $downPayment,
             $annualRate,
@@ -139,11 +139,11 @@ final class LoanTermsTest extends TestCase
     ): array {
         try {
             self::create($propertyPrice, $downPayment, $annualRate, $termMonths);
-        } catch (InvalidLoanTermsException $e) {
+        } catch (InvalidCreditTermsException $e) {
             return $e->getViolations();
         }
 
-        self::fail('Expected InvalidLoanTermsException.');
+        self::fail('Expected InvalidCreditTermsException.');
     }
 
     /**

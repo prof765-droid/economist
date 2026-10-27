@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Mortgage\Loan;
+namespace App\Domain\Mortgage\Credit;
 
 /**
  * Тип ежемесячного платежа по кредиту.

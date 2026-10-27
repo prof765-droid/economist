@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Mortgage\Loan;
+namespace App\Domain\Mortgage\Credit;
 
 /**
  * Пользователь ввёл недопустимые условия кредита.
@@ -13,7 +13,7 @@ namespace App\Domain\Mortgage\Loan;
  *
  * Наследник \DomainException: это не баг в коде, а нарушение бизнес-правила.
  */
-final class InvalidLoanTermsException extends \DomainException
+final class InvalidCreditTermsException extends \DomainException
 {
     /**
      * @param array<string, string> $violations
@@ -27,7 +27,7 @@ final class InvalidLoanTermsException extends \DomainException
         }
 
         // Сообщение — для логов и отладки; пользователю показываются сами нарушения.
-        parent::__construct(\sprintf('Invalid loan terms: %s.', implode(', ', array_keys($violations))));
+        parent::__construct(\sprintf('Invalid credit terms: %s.', implode(', ', array_keys($violations))));
     }
 
     /**

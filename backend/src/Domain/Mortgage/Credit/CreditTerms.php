@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Mortgage\Loan;
+namespace App\Domain\Mortgage\Credit;
 
 use App\Domain\Mortgage\Money;
 use Brick\Math\BigDecimal;
@@ -13,11 +13,11 @@ use Brick\Math\BigDecimal;
  * Создаётся только через create(): она проверяет все правила разом, поэтому дальше
  * калькуляторы и график доверяют объекту и ничего не перепроверяют.
  */
-final readonly class LoanTerms
+final readonly class CreditTerms
 {
     // Строки, а не числа: сравниваем с BigDecimal, а строка точна (как MAX_RATE в InterestRate).
     public const string MAX_PROPERTY_PRICE = '10000000000.00';
-    public const string MIN_LOAN_AMOUNT = '500000.00';
+    public const string MIN_CREDIT_AMOUNT = '500000.00';
     public const int MIN_TERM_MONTHS = 1;
     public const int MAX_TERM_MONTHS = 360;
 
@@ -35,7 +35,7 @@ final readonly class LoanTerms
      * Суммы и ставка приходят строками — как из JSON и из БД; превращаем их в VO здесь,
      * чтобы ошибку разбора привязать к конкретному полю.
      *
-     * @throws InvalidLoanTermsException все нарушения сразу, {поле → сообщение}
+     * @throws InvalidCreditTermsException все нарушения сразу, {поле → сообщение}
      */
     public static function create(
         string $propertyPrice,
@@ -70,7 +70,7 @@ final readonly class LoanTerms
             $violations['annualRate'] = 'Ставка должна быть больше 0 % и не больше 30 %';
         }
 
-        if (null !== $price && $price->getAmount()->isGreaterThan(self::MAX_PROPERTY_PRICE)) {
+        if (null !== $price && $price->getValue()->isGreaterThan(self::MAX_PROPERTY_PRICE)) {
             $violations['propertyPrice'] = 'Стоимость недвижимости должна быть не больше 10 000 000 000 ₽';
         }
 
@@ -78,7 +78,7 @@ final readonly class LoanTerms
         // Вычитаем через BigDecimal: Money::minus при взносе больше цены бросил бы исключение,
         // а нам нужен результат, чтобы сравнить с минимумом.
         if (null !== $price && null !== $payment
-            && $price->getAmount()->minus($payment->getAmount())->isLessThan(self::MIN_LOAN_AMOUNT)) {
+            && $price->getValue()->minus($payment->getValue())->isLessThan(self::MIN_CREDIT_AMOUNT)) {
             // Привязано к взносу: «суммы кредита» в форме нет, исправляют её, уменьшая взнос.
             $violations['downPayment'] = 'Сумма кредита должна быть не меньше 500 000 ₽';
         }
@@ -89,7 +89,7 @@ final readonly class LoanTerms
 
         // Проверяем все три null: PHPStan не знает, что при пустом списке нарушений все VO созданы.
         if ([] !== $violations || null === $price || null === $payment || null === $rate) {
-            throw new InvalidLoanTermsException($violations);
+            throw new InvalidCreditTermsException($violations);
         }
 
         return new self($price, $payment, $rate, $termMonths, $paymentType, $startDate);
@@ -126,7 +126,7 @@ final readonly class LoanTerms
     }
 
     // Не уйдёт в минус: create() гарантирует, что сумма кредита ≥ 500 000.
-    public function getLoanAmount(): Money
+    public function getCreditAmount(): Money
     {
         return $this->propertyPrice->minus($this->downPayment);
     }

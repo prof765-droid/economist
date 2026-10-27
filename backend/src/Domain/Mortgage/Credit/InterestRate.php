@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Mortgage\Loan;
+namespace App\Domain\Mortgage\Credit;
 
 use Brick\Math\BigDecimal;
 use Brick\Math\Exception\MathException;
