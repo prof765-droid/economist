@@ -6,7 +6,7 @@ namespace App\Tests\Unit\Domain\Mortgage\Credit;
 
 use App\Domain\Mortgage\Credit\CreditTerms;
 use App\Domain\Mortgage\Credit\InvalidCreditTermsException;
-use App\Domain\Mortgage\Credit\PaymentType;
+use App\Domain\Mortgage\Credit\RepaymentType;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -20,7 +20,7 @@ final class CreditTermsTest extends TestCase
         self::assertSame('1000000.00', $terms->getDownPayment()->toString());
         self::assertSame('18.50', $terms->getAnnualRate()->toString());
         self::assertSame(240, $terms->getTermMonths());
-        self::assertSame(PaymentType::ANNUITY, $terms->getPaymentType());
+        self::assertSame(RepaymentType::ANNUITY, $terms->getRepaymentType());
         self::assertSame('2026-10-23', $terms->getStartDate()->format('Y-m-d'));
         self::assertSame('4000000.00', $terms->getCreditAmount()->toString());
     }
@@ -123,7 +123,7 @@ final class CreditTermsTest extends TestCase
             $downPayment,
             $annualRate,
             $termMonths,
-            PaymentType::ANNUITY,
+            RepaymentType::ANNUITY,
             new \DateTimeImmutable($startDate),
         );
     }

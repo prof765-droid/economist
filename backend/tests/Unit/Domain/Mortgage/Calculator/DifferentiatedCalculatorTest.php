@@ -6,7 +6,7 @@ namespace App\Tests\Unit\Domain\Mortgage\Calculator;
 
 use App\Domain\Mortgage\Calculator\DifferentiatedCalculator;
 use App\Domain\Mortgage\Credit\CreditTerms;
-use App\Domain\Mortgage\Credit\PaymentType;
+use App\Domain\Mortgage\Credit\RepaymentType;
 use App\Domain\Mortgage\Schedule\Payment;
 use PHPUnit\Framework\TestCase;
 
@@ -16,8 +16,8 @@ final class DifferentiatedCalculatorTest extends TestCase
     {
         $calculator = new DifferentiatedCalculator();
 
-        self::assertTrue($calculator->supports(PaymentType::DIFFERENTIATED));
-        self::assertFalse($calculator->supports(PaymentType::ANNUITY));
+        self::assertTrue($calculator->supports(RepaymentType::DIFFERENTIATED));
+        self::assertFalse($calculator->supports(RepaymentType::ANNUITY));
     }
 
     /**
@@ -29,7 +29,7 @@ final class DifferentiatedCalculatorTest extends TestCase
      */
     public function testShortScheduleMatchesHandCalculation(): void
     {
-        $terms = CreditTerms::create('1000000.00', '0', '12', 3, PaymentType::DIFFERENTIATED, new \DateTimeImmutable('2026-10-23'));
+        $terms = CreditTerms::create('1000000.00', '0', '12', 3, RepaymentType::DIFFERENTIATED, new \DateTimeImmutable('2026-10-23'));
 
         $schedule = new DifferentiatedCalculator()->calculate($terms);
 

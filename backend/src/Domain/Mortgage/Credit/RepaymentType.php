@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Domain\Mortgage\Credit;
 
 /**
- * Тип ежемесячного платежа по кредиту.
+ * Тип погашения кредита.
  */
-enum PaymentType: string
+enum RepaymentType: string
 {
     // Аннуитетный: платёж одинаковый каждый месяц, в начале в нём больше процентов, в конце — основного долга.
     case ANNUITY = 'annuity';

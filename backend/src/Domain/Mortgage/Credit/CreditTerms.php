@@ -29,7 +29,7 @@ final readonly class CreditTerms
         private Money $downPayment,
         private InterestRate $annualRate,
         private int $termMonths,
-        private PaymentType $paymentType,
+        private RepaymentType $repaymentType,
         private \DateTimeImmutable $startDate,
     ) {
     }
@@ -45,7 +45,7 @@ final readonly class CreditTerms
         string $downPayment,
         string $annualRate,
         int $termMonths,
-        PaymentType $paymentType,
+        RepaymentType $repaymentType,
         \DateTimeImmutable $startDate,
     ): self {
         $violations = [];
@@ -97,7 +97,7 @@ final readonly class CreditTerms
             throw new InvalidCreditTermsException($violations);
         }
 
-        return new self($price, $payment, $rate, $termMonths, $paymentType, $startDate);
+        return new self($price, $payment, $rate, $termMonths, $repaymentType, $startDate);
     }
 
     public function getPropertyPrice(): Money
@@ -123,9 +123,9 @@ final readonly class CreditTerms
         return $this->termMonths;
     }
 
-    public function getPaymentType(): PaymentType
+    public function getRepaymentType(): RepaymentType
     {
-        return $this->paymentType;
+        return $this->repaymentType;
     }
 
     public function getStartDate(): \DateTimeImmutable

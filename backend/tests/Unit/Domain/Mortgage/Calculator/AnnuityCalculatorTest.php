@@ -6,7 +6,7 @@ namespace App\Tests\Unit\Domain\Mortgage\Calculator;
 
 use App\Domain\Mortgage\Calculator\AnnuityCalculator;
 use App\Domain\Mortgage\Credit\CreditTerms;
-use App\Domain\Mortgage\Credit\PaymentType;
+use App\Domain\Mortgage\Credit\RepaymentType;
 use App\Domain\Mortgage\Schedule\Payment;
 use App\Domain\Mortgage\Schedule\PaymentSchedule;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -22,8 +22,8 @@ final class AnnuityCalculatorTest extends TestCase
     {
         $calculator = new AnnuityCalculator();
 
-        self::assertTrue($calculator->supports(PaymentType::ANNUITY));
-        self::assertFalse($calculator->supports(PaymentType::DIFFERENTIATED));
+        self::assertTrue($calculator->supports(RepaymentType::ANNUITY));
+        self::assertFalse($calculator->supports(RepaymentType::DIFFERENTIATED));
     }
 
     /**
@@ -92,7 +92,7 @@ final class AnnuityCalculatorTest extends TestCase
     private static function calculate(string $creditAmount, string $rate, int $termMonths): PaymentSchedule
     {
         // Взнос 0 → сумма кредита = стоимости, так эталон читается напрямую.
-        $terms = CreditTerms::create($creditAmount, '0', $rate, $termMonths, PaymentType::ANNUITY, new \DateTimeImmutable('2026-10-23'));
+        $terms = CreditTerms::create($creditAmount, '0', $rate, $termMonths, RepaymentType::ANNUITY, new \DateTimeImmutable('2026-10-23'));
 
         return new AnnuityCalculator()->calculate($terms);
     }

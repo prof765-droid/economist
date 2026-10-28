@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Mortgage\Calculator;
 
 use App\Domain\Mortgage\Credit\CreditTerms;
-use App\Domain\Mortgage\Credit\PaymentType;
+use App\Domain\Mortgage\Credit\RepaymentType;
 use App\Domain\Mortgage\Money;
 use App\Domain\Mortgage\Schedule\Payment;
 use App\Domain\Mortgage\Schedule\PaymentSchedule;
@@ -17,9 +17,9 @@ use Brick\Math\RoundingMode;
  */
 final readonly class AnnuityCalculator implements PaymentScheduleCalculator
 {
-    public function supports(PaymentType $type): bool
+    public function supports(RepaymentType $type): bool
     {
-        return PaymentType::ANNUITY === $type;
+        return RepaymentType::ANNUITY === $type;
     }
 
     public function calculate(CreditTerms $terms): PaymentSchedule

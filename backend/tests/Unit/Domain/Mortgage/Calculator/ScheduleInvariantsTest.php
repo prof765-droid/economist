@@ -8,7 +8,7 @@ use App\Domain\Mortgage\Calculator\AnnuityCalculator;
 use App\Domain\Mortgage\Calculator\DifferentiatedCalculator;
 use App\Domain\Mortgage\Calculator\MortgageCalculator;
 use App\Domain\Mortgage\Credit\CreditTerms;
-use App\Domain\Mortgage\Credit\PaymentType;
+use App\Domain\Mortgage\Credit\RepaymentType;
 use App\Domain\Mortgage\Money;
 use App\Domain\Mortgage\Schedule\Payment;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -25,11 +25,11 @@ final class ScheduleInvariantsTest extends TestCase
     /**
      * Все сочетания: 2 типа × 5 сроков × 4 ставки × 3 суммы = 120 графиков.
      *
-     * @return iterable<string, array{PaymentType, int, string, string}>
+     * @return iterable<string, array{RepaymentType, int, string, string}>
      */
     public static function terms(): iterable
     {
-        foreach (PaymentType::cases() as $type) {
+        foreach (RepaymentType::cases() as $type) {
             foreach ([1, 2, 12, 240, 360] as $termMonths) {
                 foreach (['0.01', '6', '18.5', '30'] as $rate) {
                     foreach (['500000.00', '1234567.89', '4000000.00'] as $creditAmount) {
@@ -41,7 +41,7 @@ final class ScheduleInvariantsTest extends TestCase
     }
 
     #[DataProvider('terms')]
-    public function testScheduleInvariants(PaymentType $type, int $termMonths, string $rate, string $creditAmount): void
+    public function testScheduleInvariants(RepaymentType $type, int $termMonths, string $rate, string $creditAmount): void
     {
         // Начало 31-го — заодно проверяем, что даты берутся из CreditTerms (короткие месяцы, 29 фев.).
         $terms = CreditTerms::create($creditAmount, '0', $rate, $termMonths, $type, new \DateTimeImmutable('2027-01-31'));
@@ -67,7 +67,7 @@ final class ScheduleInvariantsTest extends TestCase
         // Последний платёж — корректирующий, поэтому сравниваем только остальные.
         $regular = \array_slice($payments, 0, -1);
 
-        if (PaymentType::ANNUITY === $type) {
+        if (RepaymentType::ANNUITY === $type) {
             foreach ($regular as $payment) {
                 self::assertTrue($payment->getAmount()->equals($schedule->getMonthlyPayment()), "Платёж № {$payment->getNumber()} отличается от первого");
             }
