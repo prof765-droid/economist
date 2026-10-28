@@ -8,6 +8,12 @@ framework:
     #esi: true
     #fragments: true
 
+    # Ошибка ввода пользователя — не авария: без этого ErrorListener пишет её в лог как CRITICAL,
+    # и на проде fingers_crossed сбрасывал бы буфер логов на каждую опечатку в форме (дизайн 5).
+    # Здесь, а не атрибутом #[WithLogLevel]: Domain не зависит от Symfony (Deptrac).
+    exceptions:
+        App\Domain\Mortgage\Credit\InvalidCreditTermsException: { log_level: info }
+
 when@test:
     framework:
         test: true
