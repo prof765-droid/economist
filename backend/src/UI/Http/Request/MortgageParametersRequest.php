@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\UI\Http\Request;
 
 use App\Application\Mortgage\CalculateMortgage\CalculateMortgageCommand;
+use App\Application\Mortgage\SaveCalculation\SaveCalculationCommand;
 use App\Domain\Mortgage\Credit\RepaymentType;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 /**
@@ -55,14 +57,13 @@ final readonly class MortgageParametersRequest
     // Вызывать только после валидации — её делает #[MapRequestPayload] до контроллера.
     public function toCalculateCommand(): CalculateMortgageCommand
     {
-        return new CalculateMortgageCommand(
-            self::required($this->propertyPrice),
-            self::required($this->downPayment),
-            self::required($this->annualRate),
-            self::required($this->termMonths),
-            RepaymentType::from(self::required($this->repaymentType)),
-            $this->startDate(),
-        );
+        return new CalculateMortgageCommand(...$this->commandArguments());
+    }
+
+    // id приходит снаружи: его генерирует контроллер, в запросе его нет (дизайн 2.2).
+    public function toSaveCommand(Uuid $id): SaveCalculationCommand
+    {
+        return new SaveCalculationCommand($id, ...$this->commandArguments());
     }
 
     /**
@@ -73,6 +74,23 @@ final readonly class MortgageParametersRequest
     public static function repaymentTypes(): array
     {
         return array_column(RepaymentType::cases(), 'value');
+    }
+
+    /**
+     * Параметры обеих команд в порядке их конструкторов — маппинг полей описан один раз.
+     *
+     * @return array{string, string, string, int, RepaymentType, \DateTimeImmutable}
+     */
+    private function commandArguments(): array
+    {
+        return [
+            self::required($this->propertyPrice),
+            self::required($this->downPayment),
+            self::required($this->annualRate),
+            self::required($this->termMonths),
+            RepaymentType::from(self::required($this->repaymentType)),
+            $this->startDate(),
+        ];
     }
 
     // «!» обнуляет время: дата платежа — без часов и минут.

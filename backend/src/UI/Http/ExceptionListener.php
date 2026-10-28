@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\UI\Http;
 
+use App\Domain\Mortgage\Calculation\CalculationNotFoundException;
 use App\Domain\Mortgage\Credit\InvalidCreditTermsException;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -39,6 +40,8 @@ final readonly class ExceptionListener
 
         $response = match (true) {
             $e instanceof InvalidCreditTermsException => $this->validationProblem($this->domainViolations($e)),
+            // Тот же ответ, что у несовпавшего роута: для клиента ресурса по адресу нет в обоих случаях.
+            $e instanceof CalculationNotFoundException => $this->problem(Response::HTTP_NOT_FOUND),
             $e instanceof HttpExceptionInterface && $previous instanceof ValidationFailedException => $this->validationProblem($this->validatorViolations($previous)),
             // Заголовки исключения — например, Retry-After у 429.
             $e instanceof HttpExceptionInterface => $this->problem($e->getStatusCode(), headers: $e->getHeaders()),

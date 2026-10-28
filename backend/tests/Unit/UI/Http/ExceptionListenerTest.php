@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\UI\Http;
 
+use App\Domain\Mortgage\Calculation\CalculationNotFoundException;
 use App\Domain\Mortgage\Credit\InvalidCreditTermsException;
 use App\UI\Http\ExceptionListener;
 use PHPUnit\Framework\TestCase;
@@ -15,6 +16,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Exception\ValidationFailedException;
@@ -59,6 +61,13 @@ final class ExceptionListenerTest extends TestCase
     public function testNotFound(): void
     {
         $response = $this->handle(new NotFoundHttpException('No route found'));
+
+        self::assertProblem(404, ['type' => 'about:blank', 'title' => 'Not Found', 'status' => 404], $response);
+    }
+
+    public function testCalculationNotFoundIs404LikeUnknownRoute(): void
+    {
+        $response = $this->handle(CalculationNotFoundException::withId(Uuid::v7()));
 
         self::assertProblem(404, ['type' => 'about:blank', 'title' => 'Not Found', 'status' => 404], $response);
     }

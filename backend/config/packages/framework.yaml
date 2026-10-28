@@ -13,6 +13,8 @@ framework:
     # Здесь, а не атрибутом #[WithLogLevel]: Domain не зависит от Symfony (Deptrac).
     exceptions:
         App\Domain\Mortgage\Credit\InvalidCreditTermsException: { log_level: info }
+        # Ссылка на несуществующий расчёт — тоже не авария.
+        App\Domain\Mortgage\Calculation\CalculationNotFoundException: { log_level: info }
 
 when@test:
     framework:
