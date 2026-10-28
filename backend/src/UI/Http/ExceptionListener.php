@@ -94,8 +94,8 @@ final readonly class ExceptionListener
      * По умолчанию type — about:blank, а title — текст статуса: так требует RFC 9457 для ошибок
      * без своего типа. Ветка со своим типом передаёт type и title в $extra.
      *
-     * @param array<string, mixed>               $extra
-     * @param array<string, list<string>|string> $headers
+     * @param array<string, mixed> $extra
+     * @param array<mixed>         $headers HttpExceptionInterface::getHeaders() типизирован просто как array
      */
     private function problem(int $status, array $extra = [], array $headers = []): JsonResponse
     {
