@@ -105,6 +105,10 @@ final readonly class ExceptionListener
             'status' => $status,
         ], $extra);
 
-        return new JsonResponse($body, $status, ['Content-Type' => 'application/problem+json'] + $headers);
+        $response = new JsonResponse($body, $status, ['Content-Type' => 'application/problem+json'] + $headers);
+        // Кириллица в сообщениях — как есть, а не \u0417…: читается в curl и логах, JSON остаётся валидным.
+        $response->setEncodingOptions(JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_UNICODE);
+
+        return $response;
     }
 }
