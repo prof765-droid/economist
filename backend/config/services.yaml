@@ -34,5 +34,13 @@ services:
         arguments:
             $calculators: !tagged_iterator mortgage.payment_schedule_calculator
 
+    # Ключи — имена роутов (= FQCN контроллера, дизайн 4.1). В YAML нет ::class: опечатку
+    # или переименование контроллера ловит RateLimitTest — лимит перестанет срабатывать.
+    App\UI\Http\RateLimitListener:
+        arguments:
+            $limiters:
+                'App\UI\Http\Controller\SaveCalculationController': '@limiter.calculation_save'
+                'App\UI\Http\Controller\CalculateMortgageController': '@limiter.mortgage_calculate'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

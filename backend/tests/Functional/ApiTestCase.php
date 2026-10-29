@@ -4,11 +4,29 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 abstract class ApiTestCase extends WebTestCase
 {
+    /**
+     * Счётчики лимитера лежат в файлах и переживают тест: без очистки сохранения всех тестов
+     * копились бы с одного IP, и тест упал бы на 429 в зависимости от порядка запуска.
+     *
+     * @param array<string, mixed> $options
+     * @param array<string, mixed> $server
+     */
+    protected static function createClient(array $options = [], array $server = []): KernelBrowser
+    {
+        $client = parent::createClient($options, $server);
+        $pool = self::getContainer()->get('app.rate_limiter_cache');
+        self::assertInstanceOf(CacheItemPoolInterface::class, $pool);
+        $pool->clear();
+
+        return $client;
+    }
+
     /**
      * Строка уходит в тело как есть — для проверки невалидного JSON.
      *

@@ -1,0 +1,21 @@
+# Анонимная запись в БД — вектор спама: «Поделиться» строго, расчёт без записи — мягче (дизайн 4.1).
+# Какой лимитер на каком роуте — в services.yaml, аргумент RateLimitListener.
+framework:
+    rate_limiter:
+        calculation_save:
+            policy: sliding_window
+            limit: 30
+            interval: '1 minute'
+            cache_pool: app.rate_limiter_cache
+        mortgage_calculate:
+            policy: sliding_window
+            limit: 60
+            interval: '1 minute'
+            cache_pool: app.rate_limiter_cache
+
+    # Тот же пул и в тестах: array-кэш Symfony обнуляет между запросами (services_resetter),
+    # счётчик не дошёл бы до лимита. Тесты чистят пул сами — ApiTestCase::createClient().
+    cache:
+        pools:
+            app.rate_limiter_cache:
+                adapter: cache.app
