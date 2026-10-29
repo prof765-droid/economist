@@ -1,15 +1,27 @@
 PHP = docker compose exec php
 PHP_RUN = docker compose run --rm php
+NODE = docker compose exec node
+NODE_RUN = docker compose run --rm node
 
-.PHONY: build up down sh test-db test lint fix phpstan deptrac
+.PHONY: build build-backend build-frontend up up-backend up-frontend down sh test-db test test-backend test-frontend lint lint-backend lint-frontend fix phpstan deptrac
 
-build:
+build: build-backend build-frontend
+
+build-backend:
 	docker compose build
 	$(PHP_RUN) composer install
 	$(PHP_RUN) bin/console doctrine:migrations:migrate -n --allow-no-migration
 
-up:
-	docker compose up -d
+build-frontend:
+	$(NODE_RUN) npm ci
+
+up: up-backend up-frontend
+
+up-backend:
+	docker compose up -d php nginx
+
+up-frontend:
+	docker compose up -d node nginx
 
 down:
 	docker compose down
@@ -21,15 +33,26 @@ test-db:
 	$(PHP) bin/console doctrine:database:create --env=test --if-not-exists
 	$(PHP) bin/console doctrine:migrations:migrate --env=test -n --allow-no-migration
 
-test:
+test: test-backend test-frontend
+
+test-backend:
 	$(PHP) vendor/bin/phpunit
 
-lint:
+test-frontend:
+	$(NODE) npm test
+
+lint: lint-backend lint-frontend
+
+lint-backend:
 	$(PHP) composer validate --strict --no-check-publish
 	$(PHP) vendor/bin/php-cs-fixer fix --dry-run --diff
 	$(MAKE) phpstan
 	$(MAKE) deptrac
 	$(PHP) bin/console lint:container
+
+lint-frontend:
+	$(NODE) npm run lint
+	$(NODE) npm run typecheck
 
 fix:
 	$(PHP) vendor/bin/php-cs-fixer fix
