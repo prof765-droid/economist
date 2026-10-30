@@ -1,0 +1,36 @@
+/* ShareLink встаёт в строку кнопок формы (flex-wrap, MortgageForm.module.css .actions) */
+
+/* той же ширины, что и «Рассчитать» (MortgageForm.module.css .submit) */
+.shareButton {
+  flex-shrink: 0;
+  width: calc((100% - var(--space-3)) * 3 / 5);
+}
+
+/* линия, ссылка, сообщение — каждая своей строкой под кнопками */
+.row {
+  flex-basis: 100%;
+}
+
+.link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* от левого края, ширины поля формы */
+.url {
+  width: calc((100% - var(--space-3)) * 3 / 5);
+  min-width: 0;
+}
+
+.message {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+@media (min-width: 600px) {
+  .shareButton,
+  .url {
+    width: 320px;
+  }
+}

@@ -9,3 +9,11 @@ export function applyDecimalMask(input: string): string | null {
 
   return ALLOWED.test(value) ? value : null
 }
+
+/** Только для показа в поле: «5000000.5» → «5 000 000.5» (узкий неразрывный пробел U+202F). */
+export function groupThousands(value: string): string {
+  const [integer, fraction] = value.split('.')
+  const grouped = integer.replace(/\B(?=(\d{3})+$)/g, '\u202f')
+
+  return fraction === undefined ? grouped : `${grouped}.${fraction}`
+}

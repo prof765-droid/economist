@@ -8,6 +8,7 @@ import { ScheduleTable } from '../components/ScheduleTable'
 import { ShareLink } from '../components/ShareLink'
 import { SummaryCards } from '../components/SummaryCards'
 import { errorMessage } from '../lib/errorMessage'
+import page from './Page.module.css'
 
 // 422 — не баннер, а ошибки у полей формы
 type BannerError = Exclude<ApiErrorDetails, { kind: 'validation' }>
@@ -53,9 +54,28 @@ export function CalculatorPage() {
   }
 
   return (
-    <main>
-      <h1>Ипотечный калькулятор</h1>
-      <MortgageForm onSubmit={submit} serverErrors={violations} initialParameters={initialParameters} />
+    <main className={page.page}>
+      <div className={`${page.section} ${page.card}`}>
+        <h1>Ипотечный калькулятор</h1>
+        {!calculation && (
+          <p className={page.hint}>Заполните условия кредита и нажмите «Рассчитать» — появятся итоги и график платежей.</p>
+        )}
+        <MortgageForm
+          onSubmit={submit}
+          serverErrors={violations}
+          initialParameters={initialParameters}
+          actions={
+            calculation && (
+              <ShareLink
+                key={calculation.number}
+                parameters={calculation.parameters}
+                sharedId={calculation.sharedId}
+                onShared={(id) => shared(calculation.parameters, id)}
+              />
+            )
+          }
+        />
+      </div>
 
       {error && lastParameters && (
         <ErrorBanner
@@ -65,14 +85,8 @@ export function CalculatorPage() {
       )}
 
       {calculation && (
-        <section aria-label="Результат расчёта">
+        <section className={page.section} aria-label="Результат расчёта">
           <SummaryCards summary={calculation.result.summary} />
-          <ShareLink
-            key={calculation.number}
-            parameters={calculation.parameters}
-            sharedId={calculation.sharedId}
-            onShared={(id) => shared(calculation.parameters, id)}
-          />
           <ScheduleTable schedule={calculation.result.schedule} />
         </section>
       )}

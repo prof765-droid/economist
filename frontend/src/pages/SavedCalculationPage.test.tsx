@@ -93,10 +93,10 @@ test('«Открыть в калькуляторе» ведёт на / с пар
   await user.click(await screen.findByRole('button', { name: 'Открыть в калькуляторе' }))
 
   expect(router.state.location.pathname).toBe('/')
-  expect(await screen.findByLabelText('Стоимость недвижимости, ₽')).toHaveValue('5000000.00')
-  expect(screen.getByLabelText('Первоначальный взнос, ₽')).toHaveValue('1000000.00')
+  expect(await screen.findByLabelText('Стоимость недвижимости, ₽')).toHaveValue('5\u202f000\u202f000.00')
+  expect(screen.getByLabelText('Первоначальный взнос, ₽')).toHaveValue('1\u202f000\u202f000.00')
   expect(screen.getByLabelText('Ставка, % годовых')).toHaveValue('18.50')
   expect(screen.getByLabelText('Срок, месяцев')).toHaveValue('240')
-  expect(screen.getByLabelText('Дифференцированный')).toBeChecked()
+  expect(screen.getByLabelText('Тип погашения')).toHaveValue('differentiated')
   expect(screen.getByLabelText('Дата выдачи кредита')).toHaveValue('2026-10-23')
 })

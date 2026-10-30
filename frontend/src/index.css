@@ -1,0 +1,147 @@
+/* Токены и базовые стили. Компоненты берут цвета и отступы только отсюда (дизайн 7.1). */
+:root {
+  --font-family: 'Inter Variable', system-ui, sans-serif;
+
+  --color-bg: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-text: #1d2733;
+  --color-muted: #5b6774;
+  --color-border: #d5dce3;
+  --color-accent: #2357c6;
+  --color-accent-hover: #1b469f;
+  --color-accent-soft: #e8eefb;
+  --color-error: #c0282d;
+  --color-error-soft: #fdeceb;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --radius: 8px;
+  --shadow: 0 1px 2px rgb(29 39 51 / 8%);
+
+  font-family: var(--font-family);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background: var(--color-bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body,
+h1,
+h2,
+p,
+dl,
+dd,
+fieldset {
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+fieldset {
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+h1 {
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+/* поля и кнопки по умолчанию берут системный шрифт — возвращаем общий */
+input,
+select,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* :where — нулевая специфичность: класс компонента (например, ширина поля ссылки) перебивает эти стили */
+:where(input[type='text'], input[type='date'], input:not([type]), select) {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+/* системная стрелка в Safari не слушается рамки и отступов — рисуем свою */
+select {
+  appearance: none;
+  padding-right: var(--space-6);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%235b6774' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  cursor: pointer;
+}
+
+input[aria-invalid='true'],
+select[aria-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+input[readonly] {
+  background: var(--color-bg);
+}
+
+button {
+  min-height: 44px;
+  padding: var(--space-2) var(--space-4);
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: var(--color-accent-soft);
+}
+
+button:disabled {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+/* рамка активного поля: видно, куда идёт ввод и вставка (дизайн 7.1, маска) */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible {
+  outline-offset: 0;
+  border-color: var(--color-accent);
+}
+
+/* разделитель в карточке: на всю её ширину, до рамки не доходит на внутренний отступ */
+hr {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+a {
+  color: var(--color-accent);
+  font-weight: 600;
+}

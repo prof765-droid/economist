@@ -137,7 +137,43 @@ test('маска: вставка «5 000 000» через буфер обмен�
   await user.click(price)
   await user.paste('5 000 000')
 
-  expect(price).toHaveValue('5000000')
+  // в поле — разряды через узкий пробел, в запрос уходит без пробелов (проверено в первом тесте)
+  expect(price).toHaveValue('5\u202f000\u202f000')
+})
+
+test('разряды: вставка цифры в середину числа не сбивает курсор в конец', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  const price = screen.getByLabelText<HTMLInputElement>('Стоимость недвижимости, ₽')
+
+  await user.type(price, '5000000')
+  expect(price).toHaveValue('5\u202f000\u202f000')
+
+  // курсор после «5», вводим «1» → 51 000 000, курсор — после «51»
+  await user.type(price, '1', { initialSelectionStart: 1, initialSelectionEnd: 1 })
+  expect(price).toHaveValue('51\u202f000\u202f000')
+  expect(price.selectionStart).toBe(2)
+})
+
+test('маска: отклонённый ввод показывает подсказку, допустимый ввод и уход с поля её убирают', async () => {
+  const hint = 'Только цифры, не больше 2 знаков после точки'
+  const user = userEvent.setup()
+  renderPage()
+  const rate = screen.getByLabelText('Ставка, % годовых')
+
+  // случай из фичи 15: «240» вставили в «Ставку» с 18.5 — вставка не прошла
+  await user.type(rate, '18.5')
+  await user.paste('240')
+  expect(rate).toHaveValue('18.5')
+  expect(screen.getByText(hint)).toBeInTheDocument()
+
+  await user.type(rate, '{Backspace}')
+  expect(screen.queryByText(hint)).not.toBeInTheDocument()
+
+  await user.type(rate, 'x')
+  expect(screen.getByText(hint)).toBeInTheDocument()
+  await user.tab()
+  expect(screen.queryByText(hint)).not.toBeInTheDocument()
 })
 
 test('«Поделиться» отправляет параметры последнего расчёта, а не текущей формы; после перерасчёта — новый POST', async () => {

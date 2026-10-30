@@ -1,0 +1,78 @@
+.form {
+  display: grid;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.error {
+  font-size: 0.875rem;
+  color: var(--color-error);
+}
+
+.maskHint {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+/* пустой — не занимает места, но остаётся в DOM: live-регион читается, только если был до изменения */
+.maskHint:empty {
+  display: none;
+}
+
+/* «Рассчитать» и «Поделиться» в одну строку; не влезают — «Поделиться» переносится вниз */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* той же ширины, что и поля: на телефоне — левый столбец строки поля (3/5), от 600 px — 320 px */
+.submit {
+  flex-shrink: 0;
+  width: calc((100% - var(--space-3)) * 3 / 5);
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.submit:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+/* строка на поле на любой ширине: поле слева, подпись справа (решение пользователя).
+   На телефоне подпись занимает 2/5 строки и переносится. */
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  row-gap: var(--space-1);
+  align-items: center;
+  column-gap: var(--space-3);
+}
+
+/* подпись — сразу справа от своего поля, а не у края колонки (решение пользователя) */
+.field > .label {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+/* поле, подсказка маски и ошибка — в левом столбце */
+.field > :not(.label) {
+  grid-column: 1;
+}
+
+/* от 600 px поле узкое (320 px) — суммы и даты короткие; подпись сразу справа (решение пользователя) */
+@media (min-width: 600px) {
+  .field {
+    grid-template-columns: 320px minmax(0, 1fr);
+    column-gap: var(--space-4);
+  }
+
+  .submit {
+    width: 320px;
+  }
+}

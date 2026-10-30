@@ -1,0 +1,59 @@
+/* На телефоне карточка — строка «подпись — сумма»: две колонки сумм вида «15 186 214,84 ₽» в 375 px не влезают */
+.cards {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* ежемесячный платёж — главное число расчёта */
+.card:first-child {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.title {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (min-width: 600px) {
+  .cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  .card {
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: var(--space-4);
+  }
+
+  .value {
+    font-size: 1.25rem;
+  }
+}
+
+@media (min-width: 1100px) {
+  .cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

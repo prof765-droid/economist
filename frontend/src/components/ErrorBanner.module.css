@@ -1,0 +1,21 @@
+.banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-error);
+  background: var(--color-error-soft);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius);
+}
+
+.retry {
+  color: var(--color-error);
+  border-color: var(--color-error);
+}
+
+.retry:hover:not(:disabled) {
+  background: var(--color-surface);
+}

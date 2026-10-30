@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { saveCalculation, toErrorDetails } from '../api/client'
 import type { MortgageParameters } from '../api/types'
 import { errorMessage } from '../lib/errorMessage'
+import styles from './ShareLink.module.css'
 
 interface Props {
   // параметры последнего выполненного расчёта, а не текущее состояние формы (дизайн 7.1)
@@ -42,29 +43,39 @@ export function ShareLink({ parameters, sharedId, onShared }: Props) {
     setMessage(await copyToClipboard(url))
   }
 
+  // фрагмент: элементы встают в строку кнопок формы (MortgageForm, actions) —
+  // кнопка рядом с «Рассчитать», линия и ссылка — своими строками ниже
   return (
-    <div>
-      <button type="button" onClick={() => void share()} disabled={saving}>
+    <>
+      <button className={styles.shareButton} type="button" onClick={() => void share()} disabled={saving}>
         {saving ? 'Сохраняем…' : 'Поделиться'}
       </button>
 
       {/* ссылка видна всегда: запасной путь, если браузер не дал скопировать (дизайн 7.1) */}
       {sharedId && (
         <>
-          <input
-            readOnly
-            value={shareUrl(sharedId)}
-            aria-label="Ссылка на расчёт"
-            onFocus={(event) => event.target.select()}
-          />
-          <button type="button" onClick={() => void copy(shareUrl(sharedId))}>
-            Скопировать
-          </button>
+          <hr className={styles.row} />
+          <div className={`${styles.row} ${styles.link}`}>
+            <input
+              className={styles.url}
+              readOnly
+              value={shareUrl(sharedId)}
+              aria-label="Ссылка на расчёт"
+              onFocus={(event) => event.target.select()}
+            />
+            <button type="button" onClick={() => void copy(shareUrl(sharedId))}>
+              Скопировать
+            </button>
+          </div>
         </>
       )}
 
-      {message && <p role="status">{message}</p>}
-    </div>
+      {message && (
+        <p className={`${styles.row} ${styles.message}`} role="status">
+          {message}
+        </p>
+      )}
+    </>
   )
 }
 

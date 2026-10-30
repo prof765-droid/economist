@@ -7,6 +7,7 @@ import { ParametersList } from '../components/ParametersList'
 import { ScheduleTable } from '../components/ScheduleTable'
 import { SummaryCards } from '../components/SummaryCards'
 import { errorMessage } from '../lib/errorMessage'
+import page from './Page.module.css'
 
 type State =
   | { status: 'loading' }
@@ -40,15 +41,15 @@ export function SavedCalculationPage() {
 
   if (state.status === 'loading') {
     return (
-      <main>
-        <p>Загружаем расчёт…</p>
+      <main className={`${page.page} ${page.centered}`}>
+        <p className={page.hint}>Загружаем расчёт…</p>
       </main>
     )
   }
 
   if (state.status === 'failed') {
     return (
-      <main>
+      <main className={`${page.page} ${page.centered}`}>
         {state.error.kind === 'notFound' ? (
           <h1>Расчёт не найден</h1>
         ) : (
@@ -65,16 +66,27 @@ export function SavedCalculationPage() {
   const { parameters, summary, schedule } = state.result
 
   return (
-    <main>
-      <h1>Сохранённый расчёт</h1>
-      {parameters && <ParametersList parameters={parameters} />}
-      <SummaryCards summary={summary} />
-      {parameters && (
-        <button type="button" onClick={() => void navigate('/', { state: { parameters } })}>
-          Открыть в калькуляторе
-        </button>
-      )}
-      <ScheduleTable schedule={schedule} />
+    <main className={page.page}>
+      <div className={`${page.section} ${page.card}`}>
+        <h1>Сохранённый расчёт</h1>
+        {parameters && (
+          <>
+            <h2 className={page.sectionTitle}>Условия кредита</h2>
+            <ParametersList parameters={parameters} />
+            <button
+              className={page.fieldWidth}
+              type="button"
+              onClick={() => void navigate('/', { state: { parameters } })}
+            >
+              Открыть в калькуляторе
+            </button>
+          </>
+        )}
+      </div>
+      <section className={page.section} aria-label="Результат расчёта">
+        <SummaryCards summary={summary} />
+        <ScheduleTable schedule={schedule} />
+      </section>
     </main>
   )
 }
