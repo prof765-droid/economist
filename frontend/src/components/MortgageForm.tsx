@@ -3,11 +3,14 @@ import { useEffect, useId } from 'react'
 import { type Control, Controller, type FieldPath, useForm } from 'react-hook-form'
 import type { MortgageParameters, Violation } from '../api/types'
 import { applyDecimalMask } from '../lib/decimalMask'
+import { formatRepaymentType } from '../lib/format'
 import { type MortgageFormValues, mortgageFormSchema } from '../schema/mortgageForm'
 
 interface Props {
   onSubmit: (parameters: MortgageParameters) => Promise<void> | void
   serverErrors: Violation[]
+  // параметры сохранённого расчёта — пришли со страницы /c/:id по «Открыть в калькуляторе»
+  initialParameters?: MortgageParameters
 }
 
 const FIELDS: ReadonlySet<string> = new Set<FieldPath<MortgageFormValues>>([
@@ -19,17 +22,10 @@ const FIELDS: ReadonlySet<string> = new Set<FieldPath<MortgageFormValues>>([
   'startDate',
 ])
 
-export function MortgageForm({ onSubmit, serverErrors }: Props) {
+export function MortgageForm({ onSubmit, serverErrors, initialParameters }: Props) {
   const { control, handleSubmit, setError, formState } = useForm<MortgageFormValues, unknown, MortgageParameters>({
     resolver: zodResolver(mortgageFormSchema),
-    defaultValues: {
-      propertyPrice: '',
-      downPayment: '',
-      annualRate: '',
-      termMonths: '',
-      repaymentType: 'annuity',
-      startDate: today(),
-    },
+    defaultValues: initialParameters ? toFormValues(initialParameters) : emptyValues(),
   })
 
   useEffect(() => {
@@ -54,11 +50,11 @@ export function MortgageForm({ onSubmit, serverErrors }: Props) {
             <legend>Тип погашения</legend>
             <label>
               <input type="radio" {...field} value="annuity" checked={field.value === 'annuity'} />
-              Аннуитетный
+              {formatRepaymentType('annuity')}
             </label>
             <label>
               <input type="radio" {...field} value="differentiated" checked={field.value === 'differentiated'} />
-              Дифференцированный
+              {formatRepaymentType('differentiated')}
             </label>
             {fieldState.error && <p role="alert">{fieldState.error.message}</p>}
           </fieldset>
@@ -116,6 +112,21 @@ function TextField({ control, name, label, masked = false, type = 'text', inputM
       )}
     />
   )
+}
+
+function emptyValues(): MortgageFormValues {
+  return {
+    propertyPrice: '',
+    downPayment: '',
+    annualRate: '',
+    termMonths: '',
+    repaymentType: 'annuity',
+    startDate: today(),
+  }
+}
+
+function toFormValues(parameters: MortgageParameters): MortgageFormValues {
+  return { ...parameters, termMonths: String(parameters.termMonths) }
 }
 
 /** Сегодня по локальному времени: toISOString() дал бы дату по UTC (в Москве до 03:00 — вчера). */

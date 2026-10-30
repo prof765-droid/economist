@@ -1,19 +1,33 @@
 import { useState } from 'react'
-import { ApiError, type ApiErrorDetails, calculate } from '../api/client'
+import { useLocation } from 'react-router'
+import { type ApiErrorDetails, calculate, toErrorDetails } from '../api/client'
 import type { CalculationResult, MortgageParameters, Violation } from '../api/types'
 import { ErrorBanner } from '../components/ErrorBanner'
 import { MortgageForm } from '../components/MortgageForm'
 import { ScheduleTable } from '../components/ScheduleTable'
+import { ShareLink } from '../components/ShareLink'
 import { SummaryCards } from '../components/SummaryCards'
+import { errorMessage } from '../lib/errorMessage'
 
 // 422 — не баннер, а ошибки у полей формы
 type BannerError = Exclude<ApiErrorDetails, { kind: 'validation' }>
 
+// Результат хранится вместе со своими параметрами: «Поделиться» отправляет то, что на экране,
+// даже если следующий расчёт не удался
+interface Calculation {
+  // номер расчёта — key для ShareLink: новый расчёт сбрасывает его сообщения
+  number: number
+  result: CalculationResult
+  parameters: MortgageParameters
+  sharedId: string | null
+}
+
 export function CalculatorPage() {
-  const [result, setResult] = useState<CalculationResult | null>(null)
+  const initialParameters = (useLocation().state as { parameters?: MortgageParameters } | null)?.parameters
+  const [calculation, setCalculation] = useState<Calculation | null>(null)
   const [error, setError] = useState<BannerError | null>(null)
   const [violations, setViolations] = useState<Violation[]>([])
-  // последние отправленные параметры: для «Повторить», в фиче 16 — для «Поделиться»
+  // последние отправленные параметры — для «Повторить»
   const [lastParameters, setLastParameters] = useState<MortgageParameters | null>(null)
 
   async function submit(parameters: MortgageParameters) {
@@ -21,9 +35,10 @@ export function CalculatorPage() {
     setError(null)
 
     try {
-      setResult(await calculate(parameters))
+      const result = await calculate(parameters)
+      setCalculation((previous) => ({ number: (previous?.number ?? 0) + 1, result, parameters, sharedId: null }))
     } catch (e) {
-      const details: ApiErrorDetails = e instanceof ApiError ? e.details : { kind: 'server', status: 0 }
+      const details = toErrorDetails(e)
       if (details.kind === 'validation') {
         setViolations(details.violations)
       } else {
@@ -32,38 +47,35 @@ export function CalculatorPage() {
     }
   }
 
+  function shared(parameters: MortgageParameters, id: string) {
+    // пока шло сохранение, мог пройти новый расчёт — его id не трогаем
+    setCalculation((current) => (current?.parameters === parameters ? { ...current, sharedId: id } : current))
+  }
+
   return (
     <main>
       <h1>Ипотечный калькулятор</h1>
-      <MortgageForm onSubmit={submit} serverErrors={violations} />
+      <MortgageForm onSubmit={submit} serverErrors={violations} initialParameters={initialParameters} />
 
       {error && lastParameters && (
         <ErrorBanner
-          message={errorMessage(error)}
+          message={errorMessage(error, 'Не удалось выполнить расчёт. Попробуйте ещё раз.')}
           onRetry={error.kind === 'rateLimited' ? undefined : () => void submit(lastParameters)}
         />
       )}
 
-      {result && (
+      {calculation && (
         <section aria-label="Результат расчёта">
-          <SummaryCards summary={result.summary} />
-          <ScheduleTable schedule={result.schedule} />
+          <SummaryCards summary={calculation.result.summary} />
+          <ShareLink
+            key={calculation.number}
+            parameters={calculation.parameters}
+            sharedId={calculation.sharedId}
+            onShared={(id) => shared(calculation.parameters, id)}
+          />
+          <ScheduleTable schedule={calculation.result.schedule} />
         </section>
       )}
     </main>
   )
-}
-
-const seconds = new Intl.PluralRules('ru')
-const SECONDS: Partial<Record<Intl.LDMLPluralRule, string>> = { one: 'секунду', few: 'секунды' }
-
-function errorMessage(error: BannerError): string {
-  switch (error.kind) {
-    case 'rateLimited':
-      return `Слишком много запросов. Попробуйте через ${error.retryAfter} ${SECONDS[seconds.select(error.retryAfter)] ?? 'секунд'}`
-    case 'network':
-      return 'Не удалось связаться с сервером. Проверьте подключение к интернету.'
-    default:
-      return 'Не удалось выполнить расчёт. Попробуйте ещё раз.'
-  }
 }

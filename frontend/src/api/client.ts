@@ -23,6 +23,11 @@ export class ApiError extends Error {
   }
 }
 
+/** Детали ошибки из `catch`: не `ApiError` — значит, упал наш код, для пользователя это как `5xx`. */
+export function toErrorDetails(error: unknown): ApiErrorDetails {
+  return error instanceof ApiError ? error.details : { kind: 'server', status: 0 }
+}
+
 export function calculate(parameters: MortgageParameters): Promise<CalculationResult> {
   return request('/api/mortgage/calculate', postJson(parameters))
 }

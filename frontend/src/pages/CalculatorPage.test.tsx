@@ -1,5 +1,7 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { createMemoryRouter } from 'react-router'
+import { RouterProvider } from 'react-router/dom'
 import { afterEach, expect, test, vi } from 'vitest'
 import type { CalculationResult } from '../api/types'
 import { CalculatorPage } from './CalculatorPage'
@@ -33,9 +35,14 @@ function mockFetch(...responses: (() => Response)[]) {
 
 const ok = () => Response.json(result)
 
+// страница читает location.state — нужен роутер
+function renderPage() {
+  render(<RouterProvider router={createMemoryRouter([{ path: '/', element: <CalculatorPage /> }])} />)
+}
+
 async function fillAndSubmit(overrides: Partial<Record<string, string>> = {}) {
   const user = userEvent.setup()
-  render(<CalculatorPage />)
+  renderPage()
 
   const values = {
     'Стоимость недвижимости, ₽': '5000000',
@@ -114,7 +121,7 @@ test('429 → «Попробуйте через N секунд» без «Пов
 
 test('маска: ввод 1.234 в стоимость не принимает третий знак', async () => {
   const user = userEvent.setup()
-  render(<CalculatorPage />)
+  renderPage()
   const price = screen.getByLabelText('Стоимость недвижимости, ₽')
 
   await user.type(price, '1.234')
@@ -124,11 +131,36 @@ test('маска: ввод 1.234 в стоимость не принимает �
 
 test('маска: вставка «5 000 000» через буфер обмена', async () => {
   const user = userEvent.setup()
-  render(<CalculatorPage />)
+  renderPage()
   const price = screen.getByLabelText('Стоимость недвижимости, ₽')
 
   await user.click(price)
   await user.paste('5 000 000')
 
   expect(price).toHaveValue('5000000')
+})
+
+test('«Поделиться» отправляет параметры последнего расчёта, а не текущей формы; после перерасчёта — новый POST', async () => {
+  const saved = (id: string) => () => Response.json({ id }, { status: 201 })
+  const fetch = mockFetch(ok, saved('id-1'), ok, saved('id-2'))
+
+  const user = await fillAndSubmit()
+  await screen.findByText('Ежемесячный платёж')
+
+  // поле изменено без перерасчёта — делимся тем, что на экране
+  await user.type(screen.getByLabelText('Срок, месяцев'), '{Backspace}{Backspace}{Backspace}120')
+  await user.click(screen.getByRole('button', { name: 'Поделиться' }))
+
+  expect(await screen.findByRole('textbox', { name: 'Ссылка на расчёт' })).toHaveValue(`${location.origin}/c/id-1`)
+  expect(fetch.mock.calls[1]?.[0]).toBe('/api/calculations')
+  expect(JSON.parse(String(fetch.mock.calls[1]?.[1]?.body))).toMatchObject({ termMonths: 240 })
+
+  await user.click(screen.getByRole('button', { name: 'Рассчитать' }))
+  // новый расчёт сбросил ссылку
+  await waitFor(() => expect(screen.queryByRole('textbox', { name: 'Ссылка на расчёт' })).not.toBeInTheDocument())
+  await user.click(screen.getByRole('button', { name: 'Поделиться' }))
+
+  expect(await screen.findByRole('textbox', { name: 'Ссылка на расчёт' })).toHaveValue(`${location.origin}/c/id-2`)
+  expect(fetch).toHaveBeenCalledTimes(4)
+  expect(JSON.parse(String(fetch.mock.calls[3]?.[1]?.body))).toMatchObject({ termMonths: 120 })
 })
