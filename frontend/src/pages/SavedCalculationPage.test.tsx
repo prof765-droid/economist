@@ -56,7 +56,7 @@ test('показывает итоги и график сохранённого �
   expect(screen.getAllByText(/^78\s333,33/)).not.toHaveLength(0)
   // условия кредита: получатель ссылки формы не видел
   expect(screen.getByText('18,5 % годовых')).toBeInTheDocument()
-  expect(screen.getByText('240 мес.')).toBeInTheDocument()
+  expect(screen.getByText('20 лет (240 мес.)')).toBeInTheDocument()
   expect(screen.getByText('Дифференцированный')).toBeInTheDocument()
   expect(screen.getByText('23.10.2026')).toBeInTheDocument()
   expect(screen.getByRole('cell', { name: '23.11.2026' })).toBeInTheDocument()
@@ -96,7 +96,23 @@ test('«Открыть в калькуляторе» ведёт на / с пар
   expect(await screen.findByLabelText('Стоимость недвижимости, ₽')).toHaveValue('5\u202f000\u202f000.00')
   expect(screen.getByLabelText('Первоначальный взнос, ₽')).toHaveValue('1\u202f000\u202f000.00')
   expect(screen.getByLabelText('Ставка, % годовых')).toHaveValue('18.50')
-  expect(screen.getByLabelText('Срок, месяцев')).toHaveValue('240')
+  // 240 кратно 12 — срок восстанавливается в годах
+  expect(screen.getByLabelText('Срок')).toHaveValue('20')
+  expect(screen.getByLabelText('Единицы срока')).toHaveValue('years')
   expect(screen.getByLabelText('Тип погашения')).toHaveValue('differentiated')
   expect(screen.getByLabelText('Дата выдачи кредита')).toHaveValue('2026-10-23')
+})
+
+test('срок, не кратный 12, — «245 мес.» на странице и в месяцах в калькуляторе', async () => {
+  const months = { ...saved, parameters: { ...saved.parameters, termMonths: 245 } }
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(months))
+  const user = userEvent.setup()
+
+  renderAt(`/c/${id}`)
+  expect(await screen.findByText('245 мес.')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Открыть в калькуляторе' }))
+
+  expect(await screen.findByLabelText('Срок')).toHaveValue('245')
+  expect(screen.getByLabelText('Единицы срока')).toHaveValue('months')
 })

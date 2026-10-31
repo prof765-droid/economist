@@ -48,7 +48,7 @@ async function fillAndSubmit(overrides: Partial<Record<string, string>> = {}) {
     'Стоимость недвижимости, ₽': '5000000',
     'Первоначальный взнос, ₽': '1000000',
     'Ставка, % годовых': '18.5',
-    'Срок, месяцев': '240',
+    Срок: '20',
     ...overrides,
   }
   for (const [label, value] of Object.entries(values)) {
@@ -77,10 +77,62 @@ test('отправляет параметры и показывает итоги
 test('ошибка Zod показывается у поля, запрос не уходит', async () => {
   const fetch = mockFetch(ok)
 
-  await fillAndSubmit({ 'Срок, месяцев': '361' })
+  await fillAndSubmit({ Срок: '31' })
 
-  expect(screen.getByLabelText('Срок, месяцев')).toHaveAccessibleDescription('Срок должен быть от 1 до 360 месяцев')
+  expect(screen.getByLabelText('Срок')).toHaveAccessibleDescription('Срок должен быть от 1 до 30 лет')
   expect(fetch).not.toHaveBeenCalled()
+})
+
+test('по умолчанию срок в годах; в месяцах уходит как есть', async () => {
+  const user = userEvent.setup()
+  const fetch = mockFetch(ok)
+  renderPage()
+
+  expect(screen.getByLabelText('Единицы срока')).toHaveValue('years')
+
+  await user.type(screen.getByLabelText('Стоимость недвижимости, ₽'), '5000000')
+  await user.type(screen.getByLabelText('Первоначальный взнос, ₽'), '1000000')
+  await user.type(screen.getByLabelText('Ставка, % годовых'), '18.5')
+  await user.selectOptions(screen.getByLabelText('Единицы срока'), 'months')
+  await user.type(screen.getByLabelText('Срок'), '245')
+  await user.click(screen.getByRole('button', { name: 'Рассчитать' }))
+
+  await screen.findByText('Ежемесячный платёж')
+  expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toMatchObject({ termMonths: 245 })
+})
+
+test('смена единиц пересчитывает срок; не кратные 12 месяцы в годы — поле очищается', async () => {
+  const user = userEvent.setup()
+  renderPage()
+  const term = screen.getByLabelText('Срок')
+  const unit = screen.getByLabelText('Единицы срока')
+
+  await user.type(term, '20')
+  await user.selectOptions(unit, 'months')
+  expect(term).toHaveValue('240')
+
+  await user.selectOptions(unit, 'years')
+  expect(term).toHaveValue('20')
+
+  await user.selectOptions(unit, 'months')
+  await user.type(term, '{Backspace}5')
+  await user.selectOptions(unit, 'years')
+  expect(term).toHaveValue('')
+})
+
+test('422 с termMonths → сообщение у поля «Срок»', async () => {
+  const message = 'Срок должен быть от 1 до 360 месяцев'
+  mockFetch(() =>
+    Response.json(
+      { type: 'https://economist.local/errors/validation', title: 'Validation failed', status: 422, violations: [{ field: 'termMonths', message }] },
+      { status: 422 },
+    ),
+  )
+
+  await fillAndSubmit()
+
+  expect(await screen.findByText(message)).toBeInTheDocument()
+  expect(screen.getByLabelText('Срок')).toHaveAccessibleDescription(message)
 })
 
 test('422 с downPayment → сообщение у поля «Первоначальный взнос»', async () => {
@@ -184,7 +236,7 @@ test('«Поделиться» отправляет параметры посл�
   await screen.findByText('Ежемесячный платёж')
 
   // поле изменено без перерасчёта — делимся тем, что на экране
-  await user.type(screen.getByLabelText('Срок, месяцев'), '{Backspace}{Backspace}{Backspace}120')
+  await user.type(screen.getByLabelText('Срок'), '{Backspace}{Backspace}10')
   await user.click(screen.getByRole('button', { name: 'Поделиться' }))
 
   expect(await screen.findByRole('textbox', { name: 'Ссылка на расчёт' })).toHaveValue(`${location.origin}/c/id-1`)

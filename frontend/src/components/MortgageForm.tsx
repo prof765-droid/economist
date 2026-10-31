@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { type ComponentProps, type ReactNode, type RefCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import { type Control, Controller, type FieldPath, useForm } from 'react-hook-form'
+import { type Control, Controller, type FieldPath, useController, useForm } from 'react-hook-form'
 import type { MortgageParameters, Violation } from '../api/types'
 import { applyDecimalMask, groupThousands } from '../lib/decimalMask'
 import { formatRepaymentType } from '../lib/format'
+import { convertTerm, fromMonths, type TermUnit } from '../lib/term'
 import { type MortgageFormValues, mortgageFormSchema } from '../schema/mortgageForm'
 import styles from './MortgageForm.module.css'
 
@@ -19,13 +20,14 @@ interface Props {
   actions?: ReactNode
 }
 
-const FIELDS: ReadonlySet<string> = new Set<FieldPath<MortgageFormValues>>([
-  'propertyPrice',
-  'downPayment',
-  'annualRate',
-  'termMonths',
-  'repaymentType',
-  'startDate',
+// поле нарушения из API → поле формы; срок в форме — число и единицы, в API — termMonths (дизайн 7.1)
+const FIELDS: ReadonlyMap<string, FieldPath<MortgageFormValues>> = new Map([
+  ['propertyPrice', 'propertyPrice'],
+  ['downPayment', 'downPayment'],
+  ['annualRate', 'annualRate'],
+  ['termMonths', 'term'],
+  ['repaymentType', 'repaymentType'],
+  ['startDate', 'startDate'],
 ])
 
 export function MortgageForm({ onSubmit, serverErrors, initialParameters, actions }: Props) {
@@ -39,7 +41,7 @@ export function MortgageForm({ onSubmit, serverErrors, initialParameters, action
   useEffect(() => {
     for (const { field, message } of serverErrors) {
       // нарушение без поля формы не теряем — показываем над кнопкой
-      setError(FIELDS.has(field) ? (field as FieldPath<MortgageFormValues>) : 'root.server', { message })
+      setError(FIELDS.get(field) ?? 'root.server', { message })
     }
   }, [serverErrors, setError])
 
@@ -49,7 +51,7 @@ export function MortgageForm({ onSubmit, serverErrors, initialParameters, action
         <TextField control={control} name="propertyPrice" label="Стоимость недвижимости, ₽" masked />
         <TextField control={control} name="downPayment" label="Первоначальный взнос, ₽" masked />
         <TextField control={control} name="annualRate" label="Ставка, % годовых" masked />
-        <TextField control={control} name="termMonths" label="Срок, месяцев" inputMode="numeric" />
+        <TermField control={control} />
 
         <Controller
           control={control}
@@ -102,14 +104,13 @@ export function MortgageForm({ onSubmit, serverErrors, initialParameters, action
 
 interface TextFieldProps {
   control: Control<MortgageFormValues, unknown, MortgageParameters>
-  name: Exclude<FieldPath<MortgageFormValues>, 'repaymentType'>
+  name: Exclude<FieldPath<MortgageFormValues>, 'repaymentType' | 'term' | 'termUnit'>
   label: string
   masked?: boolean
   type?: 'text' | 'date'
-  inputMode?: 'decimal' | 'numeric'
 }
 
-function TextField({ control, name, label, masked = false, type = 'text', inputMode }: TextFieldProps) {
+function TextField({ control, name, label, masked = false, type = 'text' }: TextFieldProps) {
   const id = useId()
   const errorId = `${id}-error`
   const [rejected, setRejected] = useState(false)
@@ -148,7 +149,6 @@ function TextField({ control, name, label, masked = false, type = 'text', inputM
               {...field}
               id={id}
               type={type}
-              inputMode={inputMode}
               aria-invalid={fieldState.invalid}
               aria-describedby={fieldState.error ? errorId : undefined}
             />
@@ -169,19 +169,76 @@ function TextField({ control, name, label, masked = false, type = 'text', inputM
   )
 }
 
+const TERM_UNITS: Record<TermUnit, string> = { years: 'лет', months: 'месяцев' }
+
+/** Срок: число и единицы рядом; смена единиц пересчитывает введённое число (дизайн 7.1). */
+function TermField({ control }: { control: TextFieldProps['control'] }) {
+  const id = useId()
+  const errorId = `${id}-error`
+  const term = useController({ control, name: 'term' })
+  const unit = useController({ control, name: 'termUnit' })
+  // ошибка единиц возможна, только если в select подставили чужое значение, — показываем под тем же полем
+  const error = term.fieldState.error ?? unit.fieldState.error
+
+  return (
+    <div className={styles.field}>
+      <label className={styles.label} htmlFor={id}>
+        Срок
+      </label>
+      <div className={styles.term}>
+        <input
+          {...term.field}
+          id={id}
+          type="text"
+          inputMode="numeric"
+          aria-invalid={term.fieldState.invalid}
+          aria-describedby={error ? errorId : undefined}
+        />
+        <select
+          {...unit.field}
+          aria-label="Единицы срока"
+          aria-invalid={unit.fieldState.invalid}
+          onChange={(event) => {
+            const next = event.target.value as TermUnit
+            // без пересчёта 20 лет молча стали бы 20 месяцами
+            term.field.onChange(convertTerm(term.field.value, unit.field.value, next))
+            unit.field.onChange(next)
+          }}
+        >
+          {Object.entries(TERM_UNITS).map(([value, title]) => (
+            <option key={value} value={value}>
+              {title}
+            </option>
+          ))}
+        </select>
+      </div>
+      {error && (
+        <p className={styles.error} id={errorId}>
+          {error.message}
+        </p>
+      )}
+    </div>
+  )
+}
+
 function emptyValues(): MortgageFormValues {
   return {
     propertyPrice: '',
     downPayment: '',
     annualRate: '',
-    termMonths: '',
+    term: '',
+    // ипотеку берут «на 20 лет», а не «на 240 месяцев» (дизайн 7.1)
+    termUnit: 'years',
     repaymentType: 'annuity',
     startDate: today(),
   }
 }
 
-function toFormValues(parameters: MortgageParameters): MortgageFormValues {
-  return { ...parameters, termMonths: String(parameters.termMonths) }
+function toFormValues({ termMonths, ...parameters }: MortgageParameters): MortgageFormValues {
+  // кратно 12 — в годах, иначе в месяцах: 245 мес. в годах не записать целым числом
+  const { term, unit } = fromMonths(termMonths)
+
+  return { ...parameters, term: String(term), termUnit: unit }
 }
 
 /** Сегодня по локальному времени: toISOString() дал бы дату по UTC (в Москве до 03:00 — вчера). */
