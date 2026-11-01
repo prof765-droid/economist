@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\UI\Http\Controller;
 
 use App\Application\Mortgage\CalculateMortgage\CalculateMortgageHandler;
-use App\UI\Http\Request\MortgageParametersRequest;
+use App\UI\Http\Request\CalculateMortgageRequest;
 use App\UI\Http\Response\CalculationResponse;
+use App\UI\Http\Response\ProblemDetails;
+use Nelmio\ApiDocBundle\Attribute\Model;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,7 +31,20 @@ final class CalculateMortgageController extends AbstractController
     }
 
     #[Route('/api/mortgage/calculate', name: self::class, methods: ['POST'])]
-    public function __invoke(#[MapRequestPayload] MortgageParametersRequest $request): JsonResponse
+    #[OA\Post(summary: 'Рассчитать график платежей', description: 'Ничего не сохраняет. В ответе нет id и parameters.')]
+    #[OA\Response(response: 200, description: 'Сводка и график', content: new Model(type: CalculationResponse::class))]
+    #[OA\Response(
+        response: 422,
+        description: 'Ошибки по полям: формат (Validator) или бизнес-правила (домен)',
+        content: new OA\MediaType(mediaType: 'application/problem+json', schema: new OA\Schema(ref: new Model(type: ProblemDetails::class))),
+    )]
+    #[OA\Response(
+        response: 429,
+        description: 'Слишком много запросов с IP',
+        headers: [new OA\Header(header: 'Retry-After', description: 'Через сколько секунд можно повторить (не меньше 1)', schema: new OA\Schema(type: 'integer', minimum: 1))],
+        content: new OA\MediaType(mediaType: 'application/problem+json', schema: new OA\Schema(ref: new Model(type: ProblemDetails::class))),
+    )]
+    public function __invoke(#[MapRequestPayload] CalculateMortgageRequest $request): JsonResponse
     {
         $schedule = $this->handler->handle($request->toCalculateCommand());
 

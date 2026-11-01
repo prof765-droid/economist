@@ -6,6 +6,8 @@ namespace App\UI\Http;
 
 use App\Domain\Mortgage\Calculation\CalculationNotFoundException;
 use App\Domain\Mortgage\Credit\InvalidCreditTermsException;
+use App\UI\Http\Response\ProblemDetails;
+use App\UI\Http\Response\ViolationResponse;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -55,60 +57,64 @@ final readonly class ExceptionListener
     /**
      * 422 одного вида и от Validator'а, и от домена — фронт разбирает один формат.
      *
-     * @param list<array{field: string, message: string}> $violations
+     * @param list<ViolationResponse> $violations
      */
     private function validationProblem(array $violations): JsonResponse
     {
-        return $this->problem(Response::HTTP_UNPROCESSABLE_ENTITY, [
-            'type' => self::VALIDATION_TYPE,
-            'title' => 'Validation failed',
-            'violations' => $violations,
-        ]);
+        return $this->respond(new ProblemDetails(
+            self::VALIDATION_TYPE,
+            'Validation failed',
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+            $violations,
+        ));
     }
 
     /**
-     * @return list<array{field: string, message: string}>
+     * @return list<ViolationResponse>
      */
     private function domainViolations(InvalidCreditTermsException $e): array
     {
         $violations = [];
         foreach ($e->getViolations() as $field => $message) {
             // Поле без записи в таблице отдаём как есть: лучше доменное имя, чем потерянная ошибка.
-            $violations[] = ['field' => self::DOMAIN_TO_API_FIELD[$field] ?? $field, 'message' => $message];
+            $violations[] = new ViolationResponse(self::DOMAIN_TO_API_FIELD[$field] ?? $field, $message);
         }
 
         return $violations;
     }
 
     /**
-     * @return list<array{field: string, message: string}>
+     * @return list<ViolationResponse>
      */
     private function validatorViolations(ValidationFailedException $e): array
     {
         $violations = [];
         foreach ($e->getViolations() as $violation) {
-            $violations[] = ['field' => $violation->getPropertyPath(), 'message' => (string) $violation->getMessage()];
+            $violations[] = new ViolationResponse($violation->getPropertyPath(), (string) $violation->getMessage());
         }
 
         return $violations;
     }
 
     /**
-     * По умолчанию type — about:blank, а title — текст статуса: так требует RFC 9457 для ошибок
-     * без своего типа. Ветка со своим типом передаёт type и title в $extra.
+     * Ошибка без своего типа: type — about:blank, а title — текст статуса, так требует RFC 9457.
      *
-     * @param array<string, mixed> $extra
-     * @param array<mixed>         $headers HttpExceptionInterface::getHeaders() типизирован просто как array
+     * @param array<mixed> $headers HttpExceptionInterface::getHeaders() типизирован просто как array
      */
-    private function problem(int $status, array $extra = [], array $headers = []): JsonResponse
+    private function problem(int $status, array $headers = []): JsonResponse
     {
-        $body = array_merge([
-            'type' => 'about:blank',
-            'title' => Response::$statusTexts[$status] ?? 'Unknown Error',
-            'status' => $status,
-        ], $extra);
+        return $this->respond(
+            new ProblemDetails('about:blank', Response::$statusTexts[$status] ?? 'Unknown Error', $status),
+            $headers,
+        );
+    }
 
-        $response = new JsonResponse($body, $status, ['Content-Type' => 'application/problem+json'] + $headers);
+    /**
+     * @param array<mixed> $headers
+     */
+    private function respond(ProblemDetails $problem, array $headers = []): JsonResponse
+    {
+        $response = new JsonResponse($problem, $problem->status, ['Content-Type' => 'application/problem+json'] + $headers);
         // Кириллица в сообщениях — как есть, а не \u0417…: читается в curl и логах, JSON остаётся валидным.
         $response->setEncodingOptions(JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_UNICODE);
 

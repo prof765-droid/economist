@@ -7,6 +7,10 @@ updates:
     ignore:
       - dependency-name: "symfony/*"
         update-types: ["version-update:semver-major"]
+      # 7.x объявила OpenApi\Attributes устаревшими, а nelmio 5.13 нового OpenApi\Spec не видит (дизайн 4.6).
+      # Снять, когда nelmio начнёт поддерживать OpenApi\Spec.
+      - dependency-name: "zircote/swagger-php"
+        update-types: ["version-update:semver-major"]
     groups:
       symfony:
         patterns: ["symfony/*"]

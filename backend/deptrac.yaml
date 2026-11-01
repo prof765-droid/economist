@@ -26,9 +26,13 @@ deptrac:
       collectors: [{ type: classLike, value: '^Doctrine\\' }]
     - name: PsrClock
       collectors: [{ type: classLike, value: '^Psr\\Clock\\' }]
+    - name: OpenApi                      # атрибуты документации API (дизайн 4.6)
+      collectors:
+        - { type: classLike, value: '^OpenApi\\' }
+        - { type: classLike, value: '^Nelmio\\' }
 
   ruleset:
     Domain:         [BrickMath, SymfonyUid]
     Application:    [Domain, BrickMath, SymfonyUid, PsrClock]
     Infrastructure: [Domain, Application, BrickMath, SymfonyUid, PsrClock, Doctrine, Symfony]
-    UI:             [Application, Domain, BrickMath, SymfonyUid, PsrClock, Symfony]
+    UI:             [Application, Domain, BrickMath, SymfonyUid, PsrClock, Symfony, OpenApi]

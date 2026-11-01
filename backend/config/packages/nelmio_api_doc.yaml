@@ -1,0 +1,23 @@
+# Документация API (дизайн 4.6): только dev и test — в prod бандл не зарегистрирован,
+# корневой ключ nelmio_api_doc там сломал бы контейнер.
+when@dev: &nelmio_api_doc
+    # Swagger UI рендерится Twig-шаблоном с AssetExtension. symfony/asset — в require-dev,
+    # а такие пакеты FrameworkBundle сам не включает (willBeAvailable) — включаем явно.
+    framework:
+        assets: true
+
+    nelmio_api_doc:
+        documentation:
+            info:
+                title: Economist API
+                description: Ипотечный калькулятор — расчёт графика платежей и сохранение расчёта по ссылке.
+                version: 1.0.0
+        areas:
+            default:
+                # Всё под /api, кроме самой документации.
+                path_patterns: ['^/api(?!/doc)']
+        html_config:
+            # JS/CSS Swagger UI встроены в HTML: путь /bundles/... nginx отправил бы в Vite.
+            assets_mode: offline
+
+when@test: *nelmio_api_doc
