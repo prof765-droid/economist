@@ -95,6 +95,17 @@ final class ExceptionListenerTest extends TestCase
         self::assertStringNotContainsString('secret', (string) $response->getContent());
     }
 
+    public function testBodyIsNotEscaped(): void
+    {
+        // assertProblem сравнивает после json_decode — экранирования не видит, поэтому проверяем сырой текст.
+        $content = (string) $this->handle(new InvalidCreditTermsException([
+            'downPayment' => 'Сумма кредита должна быть не меньше 500 000 ₽',
+        ]))->getContent();
+
+        self::assertStringContainsString('"type":"https://economist.local/errors/validation"', $content);
+        self::assertStringContainsString('"message":"Сумма кредита должна быть не меньше 500 000 ₽"', $content);
+    }
+
     private function handle(\Throwable $e): Response
     {
         $event = new ExceptionEvent(

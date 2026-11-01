@@ -115,8 +115,9 @@ final readonly class ExceptionListener
     private function respond(ProblemDetails $problem, array $headers = []): JsonResponse
     {
         $response = new JsonResponse($problem, $problem->status, ['Content-Type' => 'application/problem+json'] + $headers);
-        // Кириллица в сообщениях — как есть, а не \u0417…: читается в curl и логах, JSON остаётся валидным.
-        $response->setEncodingOptions(JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_UNICODE);
+        // Кириллица и слэши в URL `type` — как есть, а не \u0417… и https:\/\/…: читается в curl и логах,
+        // JSON остаётся валидным. Экранирование слэша нужно только JSON внутри HTML <script>, а это API.
+        $response->setEncodingOptions(JsonResponse::DEFAULT_ENCODING_OPTIONS | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
 
         return $response;
     }
