@@ -54,6 +54,28 @@ final class CalculationsTest extends ApiTestCase
         self::assertSame($calculated['schedule'], $saved['schedule']);
     }
 
+    /**
+     * Ради этого домен округляет сам (дизайн 1): иначе расчёт считал бы с 18.555, а в БД
+     * PostgreSQL молча записал бы 18.56 — и график по ссылке разошёлся бы с тем, что видел автор.
+     */
+    public function testExtraDecimalsGiveSameScheduleBeforeAndAfterSaving(): void
+    {
+        $client = self::createClient();
+        $parameters = self::validParameters(['propertyPrice' => '5000000.555', 'annualRate' => '18.555']);
+
+        self::requestJson($client, 'POST', self::URI, $parameters);
+        self::assertResponseStatusCodeSame(201);
+        $saved = self::requestJson($client, 'GET', (string) $client->getResponse()->headers->get('Location'));
+        $calculated = self::requestJson($client, 'POST', '/api/mortgage/calculate', $parameters);
+
+        $savedParameters = $saved['parameters'];
+        self::assertIsArray($savedParameters);
+        self::assertSame('5000000.56', $savedParameters['propertyPrice']);
+        self::assertSame('18.56', $savedParameters['annualRate']);
+        self::assertSame($calculated['summary'], $saved['summary']);
+        self::assertSame($calculated['schedule'], $saved['schedule']);
+    }
+
     public function testUnknownIdIs404(): void
     {
         $client = self::createClient();

@@ -162,6 +162,23 @@ test('500 → баннер, «Повторить» отправляет запр
   expect(screen.queryByRole('button', { name: 'Повторить' })).not.toBeInTheDocument()
 })
 
+test('нет сети → баннер про подключение, «Повторить» показывает результат', async () => {
+  const fetch = vi
+    .spyOn(globalThis, 'fetch')
+    .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    .mockResolvedValueOnce(ok())
+
+  const user = await fillAndSubmit()
+
+  expect(await screen.findByText('Не удалось связаться с сервером. Проверьте подключение к интернету.')).toBeInTheDocument()
+
+  await user.click(screen.getByRole('button', { name: 'Повторить' }))
+
+  expect(await screen.findByText('Ежемесячный платёж')).toBeInTheDocument()
+  expect(fetch).toHaveBeenCalledTimes(2)
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+})
+
 test('429 → «Попробуйте через N секунд» без «Повторить»', async () => {
   mockFetch(() => Response.json({ status: 429 }, { status: 429, headers: { 'Retry-After': '30' } }))
 

@@ -128,9 +128,13 @@ final class CalculateMortgageTest extends ApiTestCase
     public function testExtraDecimalsAreRoundedByDomain(): void
     {
         $client = self::createClient();
-        self::requestJson($client, 'POST', self::URI, self::validParameters(['annualRate' => '18.555']));
-
+        $withExtraDecimals = self::requestJson($client, 'POST', self::URI, self::validParameters(['annualRate' => '18.555']));
         self::assertResponseStatusCodeSame(200);
+
+        $rounded = self::requestJson($client, 'POST', self::URI, self::validParameters(['annualRate' => '18.56']));
+
+        // Лишние знаки не отклоняются, а округляются: график тот же, что при 18.56.
+        self::assertSame($rounded, $withExtraDecimals);
     }
 
     /**

@@ -4,8 +4,7 @@ import { createMemoryRouter } from 'react-router'
 import { RouterProvider } from 'react-router/dom'
 import { afterEach, expect, test, vi } from 'vitest'
 import type { CalculationResult } from '../api/types'
-import { CalculatorPage } from './CalculatorPage'
-import { SavedCalculationPage } from './SavedCalculationPage'
+import { routes } from '../routes'
 
 const id = '0192f3a1-0000-7000-8000-000000000001'
 
@@ -35,13 +34,7 @@ afterEach(() => {
 })
 
 function renderAt(path: string) {
-  const router = createMemoryRouter(
-    [
-      { path: '/', element: <CalculatorPage /> },
-      { path: '/c/:id', element: <SavedCalculationPage /> },
-    ],
-    { initialEntries: [path] },
-  )
+  const router = createMemoryRouter(routes, { initialEntries: [path] })
   render(<RouterProvider router={router} />)
 
   return router
