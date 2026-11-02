@@ -44,7 +44,7 @@ final class CalculateMortgageController extends AbstractController
         headers: [new OA\Header(header: 'Retry-After', description: 'Через сколько секунд можно повторить (не меньше 1)', schema: new OA\Schema(type: 'integer', minimum: 1))],
         content: new OA\MediaType(mediaType: 'application/problem+json', schema: new OA\Schema(ref: new Model(type: ProblemDetails::class))),
     )]
-    public function __invoke(#[MapRequestPayload] CalculateMortgageRequest $request): JsonResponse
+    public function __invoke(#[MapRequestPayload(acceptFormat: 'json')] CalculateMortgageRequest $request): JsonResponse
     {
         $schedule = $this->handler->handle($request->toCalculateCommand());
 

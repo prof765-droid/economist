@@ -36,6 +36,18 @@ final class ApiDocTest extends ApiTestCase
         );
     }
 
+    public function testRequestBodyIsJsonOnly(): void
+    {
+        $doc = self::schema(self::createClient());
+
+        foreach (['/api/mortgage/calculate', '/api/calculations'] as $path) {
+            self::assertSame(
+                ['application/json'],
+                array_keys(self::at($doc, 'paths', $path, 'post', 'requestBody', 'content')),
+            );
+        }
+    }
+
     public function testErrorsAreDescribedAsProblemDetails(): void
     {
         $doc = self::schema(self::createClient());

@@ -125,6 +125,15 @@ final class CalculateMortgageTest extends ApiTestCase
         self::assertSame(['type' => 'about:blank', 'title' => 'Bad Request', 'status' => 400], $body);
     }
 
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    #[DataProvider('nonJsonPayloads')]
+    public function testOnlyJsonIsAccepted(string $contentType, array $parameters, ?string $content): void
+    {
+        self::assertNonJsonIsRejected(self::createClient(), self::URI, $contentType, $parameters, $content);
+    }
+
     public function testExtraDecimalsAreRoundedByDomain(): void
     {
         $client = self::createClient();

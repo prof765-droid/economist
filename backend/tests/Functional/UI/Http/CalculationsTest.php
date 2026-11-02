@@ -117,6 +117,22 @@ final class CalculationsTest extends ApiTestCase
     }
 
     /**
+     * Главное здесь — запись не появилась: форму браузер шлёт с чужого сайта без preflight (дизайн 4.2).
+     *
+     * @param array<string, mixed> $parameters
+     */
+    #[DataProvider('nonJsonPayloads')]
+    public function testOnlyJsonIsAcceptedAndNothingIsSaved(string $contentType, array $parameters, ?string $content): void
+    {
+        $client = self::createClient();
+
+        self::assertNonJsonIsRejected($client, self::URI, $contentType, $parameters, $content);
+
+        $connection = self::getContainer()->get(Connection::class);
+        self::assertSame(0, $connection->fetchOne('SELECT count(*) FROM calculation'));
+    }
+
+    /**
      * @param array<mixed> $body
      */
     private static function assertNotFoundProblem(array $body): void

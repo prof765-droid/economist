@@ -49,6 +49,42 @@ abstract class ApiTestCase extends WebTestCase
     }
 
     /**
+     * Те же параметры, но не в JSON. Форма — через $parameters: Request::create(), в отличие от настоящего
+     * запроса, не разбирает тело формы сам. Срок в форме и XML — строка, как их и присылает клиент.
+     *
+     * @return iterable<string, array{string, array<string, mixed>, ?string}> Content-Type, поля формы, тело
+     */
+    public static function nonJsonPayloads(): iterable
+    {
+        yield 'html-форма' => ['application/x-www-form-urlencoded', self::validParameters(['termMonths' => '240']), null];
+        yield 'xml' => ['application/xml', [], <<<'XML'
+            <request>
+                <propertyPrice>5000000.00</propertyPrice>
+                <downPayment>1000000.00</downPayment>
+                <annualRate>18.5</annualRate>
+                <termMonths>240</termMonths>
+                <repaymentType>annuity</repaymentType>
+                <startDate>2026-10-23</startDate>
+            </request>
+            XML];
+    }
+
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    protected static function assertNonJsonIsRejected(KernelBrowser $client, string $uri, string $contentType, array $parameters, ?string $content): void
+    {
+        $client->request('POST', $uri, $parameters, server: ['CONTENT_TYPE' => $contentType], content: $content);
+
+        self::assertResponseStatusCodeSame(415);
+        self::assertResponseHeaderSame('Content-Type', 'application/problem+json');
+        self::assertSame(
+            ['type' => 'about:blank', 'title' => 'Unsupported Media Type', 'status' => 415],
+            json_decode((string) $client->getResponse()->getContent(), true, flags: \JSON_THROW_ON_ERROR),
+        );
+    }
+
+    /**
      * Запрос из дизайна 4.2; $override заменяет или добавляет поля.
      *
      * @param array<string, mixed> $override
