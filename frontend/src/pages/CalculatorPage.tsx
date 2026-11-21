@@ -30,10 +30,13 @@ export function CalculatorPage() {
   const [violations, setViolations] = useState<Violation[]>([])
   // последние отправленные параметры — для «Повторить»
   const [lastParameters, setLastParameters] = useState<MortgageParameters | null>(null)
+  // «Повторить» отправляет в обход handleSubmit формы, её isSubmitting не включается — флаг свой
+  const [pending, setPending] = useState(false)
 
   async function submit(parameters: MortgageParameters) {
     setLastParameters(parameters)
     setError(null)
+    setPending(true)
 
     try {
       const result = await calculate(parameters)
@@ -45,6 +48,8 @@ export function CalculatorPage() {
       } else {
         setError(details)
       }
+    } finally {
+      setPending(false)
     }
   }
 
@@ -63,6 +68,7 @@ export function CalculatorPage() {
         <MortgageForm
           onSubmit={submit}
           serverErrors={violations}
+          submitting={pending}
           initialParameters={initialParameters}
           actions={
             calculation && (

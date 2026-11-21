@@ -14,6 +14,8 @@ const MASK_HINT = 'Только цифры, не больше 2 знаков п�
 interface Props {
   onSubmit: (parameters: MortgageParameters) => Promise<void> | void
   serverErrors: Violation[]
+  // отправка идёт в обход формы (например, «Повторить» на странице) — кнопка выключается так же
+  submitting?: boolean
   // параметры сохранённого расчёта — пришли со страницы /c/:id по «Открыть в калькуляторе»
   initialParameters?: MortgageParameters
   // кнопки справа от «Рассчитать» (на узком экране — под ней), например «Поделиться»
@@ -30,13 +32,14 @@ const FIELDS: ReadonlyMap<string, FieldPath<MortgageFormValues>> = new Map([
   ['startDate', 'startDate'],
 ])
 
-export function MortgageForm({ onSubmit, serverErrors, initialParameters, actions }: Props) {
+export function MortgageForm({ onSubmit, serverErrors, submitting = false, initialParameters, actions }: Props) {
   const { control, handleSubmit, setError, formState } = useForm<MortgageFormValues, unknown, MortgageParameters>({
     resolver: zodResolver(mortgageFormSchema),
     defaultValues: initialParameters ? toFormValues(initialParameters) : emptyValues(),
   })
   const repaymentTypeId = useId()
   const formId = useId()
+  const busy = formState.isSubmitting || submitting
 
   useEffect(() => {
     for (const { field, message } of serverErrors) {
@@ -93,8 +96,8 @@ export function MortgageForm({ onSubmit, serverErrors, initialParameters, action
       {/* строка кнопок вне <form>: Enter в поле со ссылкой из «Поделиться» не должен отправлять расчёт;
           «Рассчитать» привязана к форме атрибутом form */}
       <div className={styles.actions}>
-        <button className={styles.submit} type="submit" form={formId} disabled={formState.isSubmitting}>
-          {formState.isSubmitting ? 'Считаем…' : 'Рассчитать'}
+        <button className={styles.submit} type="submit" form={formId} disabled={busy}>
+          {busy ? 'Считаем…' : 'Рассчитать'}
         </button>
         {actions}
       </div>

@@ -179,6 +179,23 @@ test('нет сети → баннер про подключение, «Повт
   expect(screen.queryByRole('alert')).not.toBeInTheDocument()
 })
 
+test('«Повторить» показывает загрузку: «Рассчитать» выключена до ответа', async () => {
+  let respond: (response: Response) => void = () => {}
+  vi.spyOn(globalThis, 'fetch')
+    .mockResolvedValueOnce(Response.json({ status: 500 }, { status: 500 }))
+    .mockImplementationOnce(() => new Promise((resolve) => (respond = resolve)))
+
+  const user = await fillAndSubmit()
+  await user.click(await screen.findByRole('button', { name: 'Повторить' }))
+
+  expect(screen.getByRole('button', { name: 'Считаем…' })).toBeDisabled()
+
+  respond(ok())
+
+  expect(await screen.findByText('Ежемесячный платёж')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: 'Рассчитать' })).toBeEnabled()
+})
+
 test('429 → «Попробуйте через N секунд» без «Повторить»', async () => {
   mockFetch(() => Response.json({ status: 429 }, { status: 429, headers: { 'Retry-After': '30' } }))
 

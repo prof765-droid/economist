@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { saveCalculation, toErrorDetails } from '../api/client'
 import type { MortgageParameters } from '../api/types'
 import { errorMessage } from '../lib/errorMessage'
@@ -18,6 +18,17 @@ const COPY_MANUALLY = 'Скопируйте ссылку вручную'
 export function ShareLink({ parameters, sharedId, onShared }: Props) {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  // новый расчёт меняет key и размонтирует компонент — ссылка на старый расчёт уже никому не нужна
+  const mounted = useRef(false)
+
+  useEffect(() => {
+    // true ставим здесь, а не в useRef: StrictMode делает mount → unmount → mount
+    mounted.current = true
+
+    return () => {
+      mounted.current = false
+    }
+  }, [])
 
   async function share() {
     setMessage(null)
@@ -34,6 +45,11 @@ export function ShareLink({ parameters, sharedId, onShared }: Props) {
       } finally {
         setSaving(false)
       }
+    }
+
+    // пока сохраняли, прошёл новый расчёт: без проверки в буфер молча попала бы ссылка на старый
+    if (!mounted.current) {
+      return
     }
 
     setMessage(await shareOrCopy(shareUrl(id)))

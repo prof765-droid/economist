@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, expect, test, vi } from 'vitest'
@@ -117,4 +117,22 @@ test('429 → «Попробуйте через N секунд», ссылки �
 
   expect(await screen.findByText('Слишком много запросов. Попробуйте через 30 секунд')).toBeInTheDocument()
   expect(screen.queryByRole('textbox', { name: 'Ссылка на расчёт' })).not.toBeInTheDocument()
+})
+
+test('расчёт сменился во время сохранения (компонент размонтирован) → ссылка не копируется', async () => {
+  let respond: (response: Response) => void = () => {}
+  vi.spyOn(globalThis, 'fetch').mockImplementationOnce(() => new Promise((resolve) => (respond = resolve)))
+  const user = userEvent.setup()
+  const writeText = vi.spyOn(navigator.clipboard, 'writeText')
+  const onShared = vi.fn()
+  const { unmount } = render(<ShareLink parameters={parameters} sharedId={null} onShared={onShared} />)
+
+  await user.click(screen.getByRole('button', { name: 'Поделиться' }))
+  // CalculatorPage размонтирует ShareLink сменой key при новом расчёте
+  unmount()
+  respond(Response.json({ id }, { status: 201 }))
+
+  // onShared и проверка «на экране ли» идут подряд в одном продолжении share()
+  await waitFor(() => expect(onShared).toHaveBeenCalledWith(id))
+  expect(writeText).not.toHaveBeenCalled()
 })
