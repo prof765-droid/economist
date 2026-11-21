@@ -15,6 +15,15 @@ framework:
         App\Domain\Mortgage\Credit\InvalidCreditTermsException: { log_level: info }
         # Ссылка на несуществующий расчёт — тоже не авария.
         App\Domain\Mortgage\Calculation\CalculationNotFoundException: { log_level: info }
+        # Ошибки формата от #[MapRequestPayload]: по умолчанию HTTP-исключение < 500 идёт как ERROR
+        # и сбрасывает буфер так же. Классами, а не excluded_http_codes в monolog.yaml: тогда уровень
+        # честный везде, включая dev-лог, и правило «ошибка клиента — не авария» живёт в одном месте.
+        Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException: { log_level: info }
+        Symfony\Component\HttpKernel\Exception\BadRequestHttpException: { log_level: info }
+        Symfony\Component\HttpKernel\Exception\UnsupportedMediaTypeHttpException: { log_level: info }
+        # warning, а не info: всплеск 429 — признак перебора или атаки, в dev-логе его должно быть видно;
+        # буфер на проде он всё равно не сбрасывает (порог fingers_crossed — error).
+        Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException: { log_level: warning }
 
 when@test:
     framework:
