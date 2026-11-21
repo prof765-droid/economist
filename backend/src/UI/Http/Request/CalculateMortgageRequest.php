@@ -30,24 +30,28 @@ use Symfony\Component\Validator\Constraints as Assert;
 final readonly class CalculateMortgageRequest
 {
     // Одна константа на три поля. Лишние знаки после запятой не отклоняем — их округлит домен.
-    private const string DECIMAL_PATTERN = '/^\d+(\.\d+)?$/';
+    // \z, а не $: в PCRE `$` совпадает и перед последним \n, и "5000000\n" проходил бы формат.
+    // Модификатор D делает то же, но его легко принять за лишний и удалить.
+    private const string DECIMAL_PATTERN = '/^\d+(\.\d+)?\z/';
+    // pattern для документации (JavaScript): getHtmlPattern() не переводит \z и выдал бы неверный шаблон.
+    private const string DECIMAL_HTML_PATTERN = '\d+(\.\d+)?';
     private const string DECIMAL_MESSAGE = 'Введите число, например 5000000.00';
     private const string REQUIRED_MESSAGE = 'Заполните поле';
 
     public function __construct(
         #[Assert\NotBlank(message: self::REQUIRED_MESSAGE)]
         #[Assert\Length(max: 30, maxMessage: 'Слишком длинное число')]
-        #[Assert\Regex(self::DECIMAL_PATTERN, message: self::DECIMAL_MESSAGE)]
+        #[Assert\Regex(self::DECIMAL_PATTERN, message: self::DECIMAL_MESSAGE, htmlPattern: self::DECIMAL_HTML_PATTERN)]
         #[OA\Property(description: 'Стоимость недвижимости, ₽', example: '6000000.00')]
         public ?string $propertyPrice,
         #[Assert\NotBlank(message: self::REQUIRED_MESSAGE)]
         #[Assert\Length(max: 30, maxMessage: 'Слишком длинное число')]
-        #[Assert\Regex(self::DECIMAL_PATTERN, message: self::DECIMAL_MESSAGE)]
+        #[Assert\Regex(self::DECIMAL_PATTERN, message: self::DECIMAL_MESSAGE, htmlPattern: self::DECIMAL_HTML_PATTERN)]
         #[OA\Property(description: 'Первоначальный взнос, ₽', example: '1200000.00')]
         public ?string $downPayment,
         #[Assert\NotBlank(message: self::REQUIRED_MESSAGE)]
         #[Assert\Length(max: 30, maxMessage: 'Слишком длинное число')]
-        #[Assert\Regex(self::DECIMAL_PATTERN, message: self::DECIMAL_MESSAGE)]
+        #[Assert\Regex(self::DECIMAL_PATTERN, message: self::DECIMAL_MESSAGE, htmlPattern: self::DECIMAL_HTML_PATTERN)]
         #[OA\Property(description: 'Годовая ставка, %', example: '18.50')]
         public ?string $annualRate,
         // Диапазон 1–360 проверяет домен.

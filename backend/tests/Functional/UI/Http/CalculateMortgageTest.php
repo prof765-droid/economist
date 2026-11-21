@@ -91,6 +91,17 @@ final class CalculateMortgageTest extends ApiTestCase
         yield 'price is not a number' => [['propertyPrice' => '5 000 000'], 'propertyPrice'];
     }
 
+    public function testTrailingNewlineIsRejectedAsFormat(): void
+    {
+        $client = self::createClient();
+        // В PCRE `$` совпадает и перед последним \n: без этого теста строка прошла бы Validator
+        // и получила сообщение домена вместо подсказки формата.
+        $body = self::requestJson($client, 'POST', self::URI, self::validParameters(['propertyPrice' => "5000000\n"]));
+
+        self::assertResponseStatusCodeSame(422);
+        self::assertSame([['field' => 'propertyPrice', 'message' => 'Введите число, например 5000000.00']], $body['violations']);
+    }
+
     public function testUnknownRepaymentTypeDoesNotHideOtherErrors(): void
     {
         $client = self::createClient();

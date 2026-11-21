@@ -36,6 +36,16 @@ final class ApiDocTest extends ApiTestCase
         );
     }
 
+    public function testMoneyFieldsDescribeDecimalPattern(): void
+    {
+        $properties = self::at(self::schema(self::createClient()), 'components', 'schemas', 'CalculateMortgageRequest', 'properties');
+
+        // pattern в документации — для JavaScript, без разделителей PHP и модификаторов.
+        foreach (['propertyPrice', 'downPayment', 'annualRate'] as $field) {
+            self::assertSame('\\d+(\\.\\d+)?', self::at($properties, $field)['pattern'] ?? null, $field);
+        }
+    }
+
     public function testRequestBodyIsJsonOnly(): void
     {
         $doc = self::schema(self::createClient());
